@@ -11,6 +11,7 @@
 ![API](https://img.shields.io/badge/api--version-1.21-lightgrey?style=flat-square)
 ![Softdepend](https://img.shields.io/badge/softdepend-Vault%20%7C%20LuckPerms-yellow?style=flat-square)
 ![Build](https://img.shields.io/badge/build-Maven%20%7C%20Vite-success?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
 [功能](#-功能特性) · [安装](#-快速开始) · [配置](#-配置说明) · [命令](#-命令) · [Web 后台](#-web-管理后台) · [API](#-rest-api) · [构建](#-从源码构建)
 
@@ -643,7 +644,9 @@ Vault 本身不提供经济，需再安装 EssentialsX、CMI 等经济插件。�
 
 ## 许可
 
-本项目暂未指定开源许可证。在明确许可前，默认保留所有权利；如需转载、二次分发或商用，请先联系作者。
+本项目基于 [MIT License](LICENSE) 开源，Copyright (c) 2026 stonestsy。
+
+你可以自由使用、修改、分发与商用，只需保留原始版权声明与许可声明。
 
 ---
 
