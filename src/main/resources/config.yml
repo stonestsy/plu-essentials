@@ -1,0 +1,104 @@
+# PluEssentials configuration
+
+# Prefix used in plugin messages
+prefix: "&7[&bPluEssentials&7] "
+
+# Web Admin Panel
+web:
+  enabled: true
+  # Host to bind (0.0.0.0 = all interfaces)
+  host: "0.0.0.0"
+  port: 8080
+  # Admin login password. CHANGE THIS in production!
+  password: "admin123"
+  # Session token expiry in minutes
+  token-expiry: 60
+  # Max console lines kept in memory
+  console-buffer: 500
+  # Optional: serve frontend from external directory (e.g. built Vue dist).
+  # Leave empty to use the embedded panel.
+  external-web-dir: ""
+
+# Database storage (MySQL). If disabled, YAML files are used.
+database:
+  enabled: false
+  host: "localhost"
+  port: 3306
+  database: "pluessentials"
+  username: "root"
+  password: ""
+  # Tables are created automatically on first run
+  table-prefix: "plu_"
+
+# Spawn configuration
+spawn:
+  # If no spawn is set, uses the world's spawn point
+  use-world-spawn: true
+
+# Whitelist
+whitelist:
+  enabled: false
+
+# Home limits by permission (plu.home.limit.<name>)
+# The value "default" is used when no specific limit permission is set.
+home:
+  default-limit: 5
+  # Example: a player with plu.home.limit.vip gets 20 homes
+  limits:
+    vip: 20
+    admin: 50
+
+# TPA request timeout in seconds
+tpa:
+  timeout: 60
+
+# /back feature
+back:
+  enabled: true
+  # Message shown after death
+  death-message: "&cYou died! Use &e/back &cto return to your death point."
+
+# Kits configuration
+# Each kit has a list of items (material, amount, optionally name/lore)
+# and a cooldown in seconds (0 = no cooldown)
+kits:
+  starter:
+    cooldown: 0
+    items:
+      - material: STONE_SWORD
+        amount: 1
+      - material: STONE_PICKAXE
+        amount: 1
+      - material: COOKED_BEEF
+        amount: 16
+  vip:
+    cooldown: 3600
+    items:
+      - material: DIAMOND_SWORD
+        amount: 1
+      - material: GOLDEN_APPLE
+        amount: 8
+
+# 玩家市场
+market:
+  # 成交税率（百分比，0 = 免税）
+  tax-percent: 0
+  # 每人最多上架数量
+  max-items-per-player: 10
+
+# 领地
+claims:
+  # 每人最多领地数量
+  max-per-player: 2
+  # 单块领地最大半径（边长 = 2*半径+1）
+  max-radius: 16
+
+# 自定义 TAB 列表
+tab:
+  enabled: true
+  header: "&b&lPluEssentials &7| &f在线 &a{online}&7/&a{max}"
+  footer: "&7世界: &a{world} &7| 余额: &a{balance} &7| 时间: &a{time}"
+
+# 登录系统（注册 + 登录）
+login:
+  enabled: true

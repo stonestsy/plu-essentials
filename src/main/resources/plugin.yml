@@ -1,0 +1,371 @@
+name: PluEssentials
+version: ${project.version}
+main: com.plu.plugin.Main
+api-version: '1.21'
+author: stonestsy
+authors: [stonestsy]
+description: Essentials plugin with user, admin and web-panel features for MC 1.21.2
+softdepend: [Vault, LuckPerms]
+
+commands:
+  # ---- User commands ----
+  home:
+    description: Teleport to your home
+    usage: /home [name]
+    permission: plu.home
+  sethome:
+    description: Set a home
+    usage: /sethome [name]
+    permission: plu.sethome
+  delhome:
+    description: Delete a home
+    usage: /delhome <name>
+    permission: plu.delhome
+  homes:
+    description: List your homes
+    usage: /homes
+    permission: plu.homes
+  tpa:
+    description: Request teleport to a player
+    usage: /tpa <player>
+    permission: plu.tpa
+  tpaccept:
+    description: Accept a teleport request
+    usage: /tpaccept
+    permission: plu.tpa
+  tpdeny:
+    description: Deny a teleport request
+    usage: /tpdeny
+    permission: plu.tpa
+  back:
+    description: Teleport back to your last death location
+    usage: /back
+    permission: plu.back
+  kit:
+    description: Receive a kit
+    usage: /kit [kit name]
+    permission: plu.kit
+  spawn:
+    description: Teleport to spawn
+    usage: /spawn
+    permission: plu.spawn
+  setspawn:
+    description: Set spawn location
+    usage: /setspawn
+    permission: plu.setspawn
+  warp:
+    description: Teleport to a warp
+    usage: /warp [name]
+    permission: plu.warp
+  setwarp:
+    description: Set a warp
+    usage: /setwarp <name>
+    permission: plu.setwarp
+  delwarp:
+    description: Delete a warp
+    usage: /delwarp <name>
+    permission: plu.delwarp
+
+  # ---- Admin commands ----
+  fly:
+    description: Toggle flight
+    usage: /fly [player]
+    permission: plu.fly
+  gamemode:
+    description: Change gamemode
+    usage: /gamemode <mode> [player]
+    aliases: [gm]
+    permission: plu.gamemode
+  heal:
+    description: Heal a player
+    usage: /heal [player]
+    permission: plu.heal
+  feed:
+    description: Feed a player
+    usage: /feed [player]
+    permission: plu.feed
+  god:
+    description: Toggle god mode
+    usage: /god [player]
+    permission: plu.god
+  vanish:
+    description: Toggle vanish
+    usage: /vanish [player]
+    aliases: [v]
+    permission: plu.vanish
+  broadcast:
+    description: Broadcast a message
+    usage: /broadcast <message>
+    aliases: [bc]
+    permission: plu.broadcast
+  clear:
+    description: Clear a player's inventory
+    usage: /clear [player]
+    aliases: [ci]
+    permission: plu.clear
+  ban:
+    description: Ban a player permanently
+    usage: /ban <player> [reason]
+    permission: plu.ban
+  tempban:
+    description: Temporarily ban a player
+    usage: /tempban <player> <duration> [reason]
+    permission: plu.ban
+  unban:
+    description: Unban a player
+    usage: /unban <player>
+    permission: plu.ban
+  banlist:
+    description: List banned players
+    usage: /banlist
+    permission: plu.ban
+  invsee:
+    description: View and edit another player's inventory
+    usage: /invsee <player>
+    permission: plu.invsee
+  enderchest:
+    description: View a player's ender chest
+    usage: /enderchest [player]
+    aliases: [ec]
+    permission: plu.enderchest
+  ipban:
+    description: Ban an IP address
+    usage: /ipban <ip|player> [reason]
+    permission: plu.ipban
+  ipunban:
+    description: Unban an IP address
+    usage: /ipunban <ip>
+    permission: plu.ipban
+  ipbanlist:
+    description: List banned IPs
+    usage: /ipbanlist
+    permission: plu.ipban
+  whitelist:
+    description: Manage the whitelist
+    usage: /whitelist <on|off|add|remove|list> [player]
+    aliases: [wl]
+    permission: plu.whitelist
+  chatlog:
+    description: View chat log
+    usage: /chatlog [count|keyword]
+    permission: plu.chatlog
+  seen:
+    description: View player stats (first join, playtime)
+    usage: /seen <player>
+    permission: plu.seen
+  sudo:
+    description: Force a player to run a command
+    usage: /sudo <player> <command>
+    permission: plu.sudo
+  speed:
+    description: Set walk/fly speed
+    usage: /speed <1-10> [player]
+    permission: plu.speed
+  healall:
+    description: Heal all online players
+    usage: /healall
+    permission: plu.healall
+  feedall:
+    description: Feed all online players
+    usage: /feedall
+    permission: plu.feedall
+  plureload:
+    description: Reload plugin config
+    usage: /plureload
+    permission: plu.reload
+
+  # ---- Economy ----
+  money:
+    description: Check your balance
+    usage: /money [player]
+    aliases: [bal, balance]
+    permission: plu.money
+  pay:
+    description: Transfer money to another player
+    usage: /pay <player> <amount>
+    permission: plu.pay
+  baltop:
+    description: Show the wealth ranking
+    usage: /baltop [count]
+    aliases: [balancetop]
+    permission: plu.baltop
+
+  # ---- Player market ----
+  market:
+    description: Open the player market
+    usage: /market [sell <price>|my|remove <id>|help]
+    aliases: [ah]
+    permission: plu.market
+
+  # ---- Land claiming ----
+  claim:
+    description: Claim and manage land
+    usage: /claim [create [radius]|list|remove <id>|info]
+    aliases: [land]
+    permission: plu.claim
+
+  # ---- Announcements / rules (book UI) ----
+  rules:
+    description: View server rules as a written book
+    usage: /rules
+    permission: plu.rules
+  news:
+    description: View server announcements as a written book
+    usage: /news
+    aliases: [announcements]
+    permission: plu.news
+
+  # ---- Login ----
+  login:
+    description: Login to your account
+    usage: /login <password>
+  register:
+    description: Register an account
+    usage: /register <password>
+
+  # ---- Redeem codes ----
+  redeem:
+    description: Redeem a code for currency, or manage codes as admin
+    usage: /redeem <code> | create <code|#> <amount> [uses] [duration] | list | toggle | delete
+    aliases: [redeemcode, cdkey]
+    permission: plu.redeem
+
+permissions:
+  plu.home:
+    description: Allow using /home
+    default: true
+  plu.sethome:
+    description: Allow using /sethome
+    default: true
+  plu.delhome:
+    description: Allow using /delhome
+    default: true
+  plu.homes:
+    description: Allow using /homes
+    default: true
+  plu.tpa:
+    description: Allow using /tpa
+    default: true
+  plu.back:
+    description: Allow using /back
+    default: true
+  plu.kit:
+    description: Allow using /kit
+    default: true
+  plu.spawn:
+    description: Allow using /spawn
+    default: true
+  plu.warp:
+    description: Allow using /warp
+    default: true
+  plu.setspawn:
+    description: Allow using /setspawn
+    default: op
+  plu.setwarp:
+    description: Allow using /setwarp
+    default: op
+  plu.delwarp:
+    description: Allow using /delwarp
+    default: op
+  plu.ban:
+    description: Allow ban/unban/banlist commands
+    default: op
+  plu.invsee:
+    description: Allow viewing/editing player inventories
+    default: op
+  plu.enderchest:
+    description: Allow viewing player ender chests
+    default: op
+  plu.ipban:
+    description: Allow IP ban management
+    default: op
+  plu.whitelist:
+    description: Allow whitelist management
+    default: op
+  plu.chatlog:
+    description: Allow viewing chat log
+    default: op
+  plu.seen:
+    description: Allow viewing player stats
+    default: op
+  plu.sudo:
+    description: Allow forcing commands on players
+    default: op
+  plu.speed:
+    description: Allow setting speed
+    default: op
+  plu.healall:
+    description: Allow healing all players
+    default: op
+  plu.feedall:
+    description: Allow feeding all players
+    default: op
+  plu.fly:
+    description: Allow using /fly
+    default: op
+  plu.gamemode:
+    description: Allow using /gamemode
+    default: op
+  plu.heal:
+    description: Allow using /heal
+    default: op
+  plu.feed:
+    description: Allow using /feed
+    default: op
+  plu.god:
+    description: Allow using /god
+    default: op
+  plu.vanish:
+    description: Allow using /vanish
+    default: op
+  plu.broadcast:
+    description: Allow using /broadcast
+    default: op
+  plu.clear:
+    description: Allow using /clear
+    default: op
+  plu.reload:
+    description: Allow using /plureload
+    default: op
+  plu.money:
+    description: Allow checking own balance
+    default: true
+  plu.money.others:
+    description: Allow checking other players' balance
+    default: op
+  plu.pay:
+    description: Allow transferring money
+    default: true
+  plu.baltop:
+    description: Allow viewing the wealth ranking
+    default: true
+  plu.market:
+    description: Allow using the player market
+    default: true
+  plu.market.admin:
+    description: Allow removing any market listing
+    default: op
+  plu.claim:
+    description: Allow claiming and managing land
+    default: true
+  plu.claim.bypass:
+    description: Bypass land protection
+    default: op
+  plu.claim.admin:
+    description: Allow removing any claim
+    default: op
+  plu.rules:
+    description: Allow viewing server rules
+    default: true
+  plu.news:
+    description: Allow viewing server announcements
+    default: true
+  plu.login.bypass:
+    description: Skip the login requirement
+    default: op
+  plu.redeem:
+    description: Allow redeeming codes
+    default: true
+  plu.redeem.admin:
+    description: Allow creating and managing redeem codes
+    default: op

@@ -1,0 +1,238 @@
+package com.plu.plugin;
+
+import com.plu.plugin.commands.admin.*;
+import com.plu.plugin.commands.user.*;
+import com.plu.plugin.listeners.ClaimListener;
+import com.plu.plugin.listeners.LoginListener;
+import com.plu.plugin.listeners.MarketListener;
+import com.plu.plugin.listeners.PlayerListener;
+import com.plu.plugin.managers.*;
+import com.plu.plugin.storage.DatabaseManager;
+import com.plu.plugin.web.WebServer;
+import com.plu.plugin.web.hooks.LuckPermsHook;
+import com.plu.plugin.web.hooks.VaultHook;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public final class Main extends JavaPlugin {
+
+    private static Main instance;
+
+    private HomeManager homeManager;
+    private TpaManager tpaManager;
+    private KitManager kitManager;
+    private GodManager godManager;
+    private VanishManager vanishManager;
+    private BackManager backManager;
+    private SpawnManager spawnManager;
+    private BanManager banManager;
+    private WarpManager warpManager;
+    private TaskManager taskManager;
+    private IpBanManager ipBanManager;
+    private WhitelistManager whitelistManager;
+    private ChatLogManager chatLogManager;
+    private PlayerStatsManager playerStatsManager;
+    private EconomyManager economyManager;
+    private MarketManager marketManager;
+    private ClaimManager claimManager;
+    private LoginManager loginManager;
+    private AnnouncementManager announcementManager;
+    private TabManager tabManager;
+    private RedeemManager redeemManager;
+    private DatabaseManager databaseManager;
+    private WebServer webServer;
+    private long enableTime;
+
+    @Override
+    public void onEnable() {
+        instance = this;
+        enableTime = System.currentTimeMillis();
+        saveDefaultConfig();
+
+        // Database (MySQL) - must be before managers that use it
+        this.databaseManager = new DatabaseManager(this);
+        databaseManager.connect();
+
+        // Managers
+        this.homeManager = new HomeManager(this, databaseManager);
+        this.tpaManager = new TpaManager(this);
+        this.kitManager = new KitManager(this);
+        this.godManager = new GodManager();
+        this.vanishManager = new VanishManager(this);
+        this.backManager = new BackManager(this);
+        this.spawnManager = new SpawnManager(this);
+        this.banManager = new BanManager(this, databaseManager);
+        this.warpManager = new WarpManager(this, databaseManager);
+        this.taskManager = new TaskManager(this, databaseManager);
+        this.ipBanManager = new IpBanManager(this, databaseManager);
+        this.whitelistManager = new WhitelistManager(this, databaseManager);
+        this.chatLogManager = new ChatLogManager(this, databaseManager);
+        this.playerStatsManager = new PlayerStatsManager(this, databaseManager);
+        this.economyManager = new EconomyManager(this);
+        this.marketManager = new MarketManager(this, databaseManager);
+        this.claimManager = new ClaimManager(this, databaseManager);
+        this.loginManager = new LoginManager(this, databaseManager);
+        this.announcementManager = new AnnouncementManager(this);
+        this.tabManager = new TabManager(this);
+        this.redeemManager = new RedeemManager(this, databaseManager);
+
+        homeManager.load();
+        kitManager.load();
+        spawnManager.load();
+        banManager.load();
+        warpManager.load();
+        taskManager.load();
+        ipBanManager.load();
+        whitelistManager.load();
+        chatLogManager.load();
+        playerStatsManager.load();
+        marketManager.load();
+        claimManager.load();
+        loginManager.load();
+        announcementManager.load();
+        redeemManager.load();
+        taskManager.start();
+        tabManager.start();
+
+        // Soft-dependency hooks (Vault, LuckPerms)
+        VaultHook.setup();
+        LuckPermsHook.setup();
+
+        // Listeners
+        Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new MarketListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new ClaimListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new LoginListener(this), this);
+
+        // User commands
+        registerUserCommands();
+        registerAdminCommands();
+
+        // Web admin panel
+        this.webServer = new WebServer(this);
+        webServer.start();
+
+        getLogger().info("PluEssentials v" + getDescription().getVersion() + " enabled.");
+    }
+
+    @Override
+    public void onDisable() {
+        if (webServer != null) webServer.stop();
+        if (taskManager != null) taskManager.stop();
+        if (tabManager != null) tabManager.stop();
+        if (homeManager != null) homeManager.save();
+        if (spawnManager != null) spawnManager.save();
+        if (databaseManager != null) databaseManager.disconnect();
+        getLogger().info("PluEssentials disabled.");
+    }
+
+    private void registerUserCommands() {
+        getCommand("home").setExecutor(new HomeCommand(this));
+        getCommand("sethome").setExecutor(new SetHomeCommand(this));
+        getCommand("delhome").setExecutor(new DelHomeCommand(this));
+        getCommand("homes").setExecutor(new HomesCommand(this));
+        getCommand("tpa").setExecutor(new TpaCommand(this));
+        getCommand("tpaccept").setExecutor(new TpacceptCommand(this));
+        getCommand("tpdeny").setExecutor(new TpdenyCommand(this));
+        getCommand("back").setExecutor(new BackCommand(this));
+        getCommand("kit").setExecutor(new KitCommand(this));
+        getCommand("spawn").setExecutor(new SpawnCommand(this));
+        getCommand("setspawn").setExecutor(new SetSpawnCommand(this));
+        getCommand("warp").setExecutor(new WarpCommand(this));
+        getCommand("money").setExecutor(new MoneyCommand(this));
+        getCommand("pay").setExecutor(new PayCommand(this));
+        getCommand("baltop").setExecutor(new BaltopCommand(this));
+        getCommand("market").setExecutor(new MarketCommand(this));
+        getCommand("claim").setExecutor(new ClaimCommand(this));
+        getCommand("rules").setExecutor(new RulesCommand(this));
+        getCommand("news").setExecutor(new NewsCommand(this));
+        getCommand("login").setExecutor(new LoginCommand(this));
+        getCommand("register").setExecutor(new RegisterCommand(this));
+        getCommand("redeem").setExecutor(new RedeemCommand(this));
+    }
+
+    private void registerAdminCommands() {
+        getCommand("fly").setExecutor(new FlyCommand(this));
+        getCommand("gamemode").setExecutor(new GamemodeCommand(this));
+        getCommand("heal").setExecutor(new HealCommand(this));
+        getCommand("feed").setExecutor(new FeedCommand(this));
+        getCommand("god").setExecutor(new GodCommand(this));
+        getCommand("vanish").setExecutor(new VanishCommand(this));
+        getCommand("broadcast").setExecutor(new BroadcastCommand(this));
+        getCommand("clear").setExecutor(new ClearCommand(this));
+        getCommand("plureload").setExecutor(new ReloadCommand(this));
+        getCommand("ban").setExecutor(new BanCommand(this));
+        getCommand("tempban").setExecutor(new TempbanCommand(this));
+        getCommand("unban").setExecutor(new UnbanCommand(this));
+        getCommand("banlist").setExecutor(new BanlistCommand(this));
+        getCommand("setwarp").setExecutor(new SetwarpCommand(this));
+        getCommand("delwarp").setExecutor(new DelwarpCommand(this));
+        getCommand("invsee").setExecutor(new InvseeCommand(this));
+        getCommand("enderchest").setExecutor(new EnderchestCommand(this));
+        getCommand("ipban").setExecutor(new IpBanCommand(this));
+        getCommand("ipunban").setExecutor(new IpUnbanCommand(this));
+        getCommand("ipbanlist").setExecutor(new IpBanlistCommand(this));
+        getCommand("whitelist").setExecutor(new WhitelistCommand(this));
+        getCommand("chatlog").setExecutor(new ChatlogCommand(this));
+        getCommand("seen").setExecutor(new SeenCommand(this));
+        getCommand("sudo").setExecutor(new SudoCommand(this));
+        getCommand("speed").setExecutor(new SpeedCommand(this));
+        getCommand("healall").setExecutor(new HealallCommand(this));
+        getCommand("feedall").setExecutor(new FeedallCommand(this));
+    }
+
+    public void reload() {
+        reloadConfig();
+        homeManager.load();
+        kitManager.load();
+        spawnManager.load();
+        banManager.load();
+        warpManager.load();
+        taskManager.load();
+        ipBanManager.load();
+        whitelistManager.load();
+        chatLogManager.load();
+        playerStatsManager.load();
+        marketManager.load();
+        claimManager.load();
+        loginManager.load();
+        announcementManager.reload();
+        redeemManager.load();
+        tabManager.start();
+        if (webServer != null) webServer.reload();
+        VaultHook.setup();
+        LuckPermsHook.setup();
+    }
+
+    public long getPluginTime() {
+        return System.currentTimeMillis() - enableTime;
+    }
+
+    public static Main getInstance() { return instance; }
+    public HomeManager getHomeManager() { return homeManager; }
+    public TpaManager getTpaManager() { return tpaManager; }
+    public KitManager getKitManager() { return kitManager; }
+    public GodManager getGodManager() { return godManager; }
+    public VanishManager getVanishManager() { return vanishManager; }
+    public BackManager getBackManager() { return backManager; }
+    public SpawnManager getSpawnManager() { return spawnManager; }
+    public BanManager getBanManager() { return banManager; }
+    public WarpManager getWarpManager() { return warpManager; }
+    public TaskManager getTaskManager() { return taskManager; }
+    public IpBanManager getIpBanManager() { return ipBanManager; }
+    public WhitelistManager getWhitelistManager() { return whitelistManager; }
+    public ChatLogManager getChatLogManager() { return chatLogManager; }
+    public PlayerStatsManager getPlayerStatsManager() { return playerStatsManager; }
+    public EconomyManager getEconomyManager() { return economyManager; }
+    public MarketManager getMarketManager() { return marketManager; }
+    public ClaimManager getClaimManager() { return claimManager; }
+    public LoginManager getLoginManager() { return loginManager; }
+    public AnnouncementManager getAnnouncementManager() { return announcementManager; }
+    public TabManager getTabManager() { return tabManager; }
+    public RedeemManager getRedeemManager() { return redeemManager; }
+    public DatabaseManager getDatabaseManager() { return databaseManager; }
+
+    public String getPrefix() {
+        return getConfig().getString("prefix", "&7[&bPluEssentials&7] ");
+    }
+}
