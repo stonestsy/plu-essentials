@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <template #header><b>经济管理 (Vault)</b></template>
+    <template #header><b>经济管理（内置）</b></template>
     <el-input v-model="name" placeholder="玩家名" style="width:200px" />
     <el-button type="primary" style="margin-left:8px" @click="lookup">查询</el-button>
     <div v-if="result" class="result">
@@ -17,7 +17,9 @@
         <el-button type="primary" @click="op('set')">设置</el-button>
       </div>
     </div>
-    <el-alert v-else-if="!vault" type="info" style="margin-top:16px">未检测到 Vault 经济插件，请安装 Vault 及经济插件以启用此功能。</el-alert>
+    <el-alert v-else-if="!vault" type="warning" style="margin-top:16px">
+      内置经济系统已在 config.yml 中被关闭（economy.enabled: false）。
+    </el-alert>
   </el-card>
 </template>
 
@@ -33,7 +35,7 @@ const vault = ref(false)
 
 onMounted(async () => {
   const d = await api.get('/api/dashboard')
-  vault.value = d.vaultEnabled
+  vault.value = d.economyEnabled
 })
 
 async function lookup() {

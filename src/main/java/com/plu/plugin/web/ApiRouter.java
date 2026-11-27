@@ -3,8 +3,6 @@ package com.plu.plugin.web;
 import com.plu.plugin.Main;
 import com.plu.plugin.managers.TaskManager;
 import com.plu.plugin.util.PlayerResolver;
-import com.plu.plugin.web.hooks.LuckPermsHook;
-import com.plu.plugin.web.hooks.VaultHook;
 import com.sun.net.httpserver.HttpExchange;
 import org.bukkit.*;
 import org.bukkit.command.ConsoleCommandSender;
@@ -83,6 +81,7 @@ public class ApiRouter {
                     else if (path.startsWith("/api/worlds/")) handleWorldAction(exchange, parts, method);
                     else if (path.startsWith("/api/economy/")) handleEconomy(exchange, parts, method);
                     else if (path.startsWith("/api/permissions/")) handlePermissions(exchange, parts);
+                    else if (path.startsWith("/api/groups")) handleGroups(exchange, parts, method);
                     else if (path.startsWith("/api/homes/")) handleHomes(exchange, parts);
                     else if (path.startsWith("/api/ipbans")) handleIpBans(exchange, parts, method);
                     else if (path.startsWith("/api/whitelist")) handleWhitelist(exchange, parts, method);
@@ -173,9 +172,13 @@ public class ApiRouter {
         data.put("memoryMaxMb", rt.maxMemory() / (1024 * 1024));
         data.put("memoryPercent", Math.round(used * 100.0 / rt.maxMemory()));
         data.put("uptimeMs", uptime);
-        data.put("vaultEnabled", VaultHook.isAvailable());
-        data.put("vaultInstalled", VaultHook.isPluginInstalled());
-        data.put("luckpermsEnabled", LuckPermsHook.isAvailable());
+        data.put("vaultEnabled", plugin.getEconomyManager().isEnabled());
+        data.put("vaultInstalled", true);
+        data.put("luckpermsEnabled", true);
+        data.put("economyEnabled", plugin.getEconomyManager().isEnabled());
+        data.put("groupsEnabled", true);
+        data.put("totalMoney", plugin.getEconomyManager().totalMoney());
+        data.put("accountCount", plugin.getEconomyManager().accountCount());
         data.put("pluginName", plugin.getName());
         data.put("pluginVersion", plugin.getDescription().getVersion());
         WebServer.sendJson(exchange, 200, Json.stringify(data));
@@ -198,10 +201,8 @@ public class ApiRouter {
             m.put("world", p.getWorld().getName());
             m.put("ip", p.getAddress() != null ? p.getAddress().getAddress().getHostAddress() : "");
             m.put("ping", p.getPing());
-            m.put("primaryGroup", LuckPermsHook.getPrimaryGroup(p));
-            if (VaultHook.isAvailable()) {
-                m.put("balance", VaultHook.getBalance(p));
-            }
+            m.put("primaryGroup", plugin.getGroupManager().getPrimaryGroup(p.getUniqueId()));
+            m.put("balance", plugin.getEconomyManager().balance(p.getUniqueId()));
             players.add(m);
         }
         WebServer.sendJson(exchange, 200, Json.stringify(Map.of("players", players)));
@@ -434,10 +435,10 @@ public class ApiRouter {
         WebServer.sendJson(exchange, 200, "{\"success\":true}");
     }
 
-    // ---------- Economy (Vault) ----------
+    // ---------- Economy (built-in) ----------
     private void handleEconomy(HttpExchange exchange, String[] parts, String method) throws IOException {
-        if (!VaultHook.isAvailable()) {
-            WebServer.sendJson(exchange, 503, "{\"error\":\"Vault not available\"}");
+        if (!plugin.getEconomyManager().isEnabled()) {
+            WebServer.sendJson(exchange, 503, "{\"error\":\"economy disabled\"}");
             return;
         }
         if (parts.length < 4) {
@@ -446,11 +447,17 @@ public class ApiRouter {
         }
         String name = parts[3];
         OfflinePlayer op = PlayerResolver.byName(name);
+        if (op == null) {
+            WebServer.sendJson(exchange, 404, "{\"error\":\"unknown player\"}");
+            return;
+        }
+        var eco = plugin.getEconomyManager();
         if (method.equals("GET") || parts.length == 4) {
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("player", name);
-            data.put("balance", VaultHook.getBalance(op));
-            data.put("currency", VaultHook.getCurrencyName());
+            data.put("balance", eco.balance(op.getUniqueId()));
+            data.put("currency", eco.currencyName());
+            data.put("formatted", eco.format(eco.balance(op.getUniqueId())));
             WebServer.sendJson(exchange, 200, Json.stringify(data));
             return;
         }
@@ -462,35 +469,151 @@ public class ApiRouter {
             WebServer.sendJson(exchange, 400, "{\"error\":\"amount required\"}");
             return;
         }
-        double amount = Double.parseDouble(amountStr);
+        double amount;
+        try { amount = Double.parseDouble(amountStr); }
+        catch (Exception e) {
+            WebServer.sendJson(exchange, 400, "{\"error\":\"invalid amount\"}");
+            return;
+        }
         boolean ok = switch (action) {
-            case "set" -> VaultHook.setBalance(op, amount);
-            case "add" -> VaultHook.add(op, amount);
-            case "remove" -> VaultHook.remove(op, amount);
+            case "set" -> eco.set(op.getUniqueId(), amount);
+            case "add" -> eco.deposit(op.getUniqueId(), amount);
+            case "remove" -> eco.set(op.getUniqueId(), Math.max(0, eco.balance(op.getUniqueId()) - amount));
             default -> false;
         };
         WebServer.sendJson(exchange, ok ? 200 : 400, Json.stringify(Map.of(
-                "success", ok, "balance", VaultHook.getBalance(op))));
+                "success", ok, "balance", eco.balance(op.getUniqueId()))));
     }
 
-    // ---------- Permissions (LuckPerms) ----------
+    // ---------- Permissions / groups (built-in) ----------
     private void handlePermissions(HttpExchange exchange, String[] parts) throws IOException {
         if (parts.length < 4) {
             WebServer.sendJson(exchange, 400, "{\"error\":\"Bad request\"}");
             return;
         }
         String name = parts[3];
-        Player p = Bukkit.getPlayer(name);
-        if (p == null) {
-            WebServer.sendJson(exchange, 404, "{\"error\":\"Player not online\"}");
+        OfflinePlayer op = PlayerResolver.byName(name);
+        if (op == null) {
+            WebServer.sendJson(exchange, 404, "{\"error\":\"unknown player\"}");
             return;
         }
+        var gm = plugin.getGroupManager();
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("player", name);
-        data.put("primaryGroup", LuckPermsHook.getPrimaryGroup(p));
-        data.put("groups", LuckPermsHook.getGroups(p));
-        data.put("available", LuckPermsHook.isAvailable());
+        data.put("primaryGroup", gm.getPrimaryGroup(op.getUniqueId()));
+        data.put("groups", gm.getGroups(op.getUniqueId()));
+        data.put("prefix", gm.getPrefix(op.getUniqueId()));
+        data.put("permissionCount", gm.effectivePermissions(op.getUniqueId()).size());
+        data.put("permissions", new ArrayList<>(gm.effectivePermissions(op.getUniqueId())));
+        data.put("available", true);
         WebServer.sendJson(exchange, 200, Json.stringify(data));
+    }
+
+    // ---------- Group management ----------
+    private void handleGroups(HttpExchange exchange, String[] parts, String method) throws IOException {
+        var gm = plugin.getGroupManager();
+
+        if (method.equals("GET")) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (var g : gm.getAll()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("name", g.name);
+                m.put("prefix", g.prefix == null ? "" : g.prefix);
+                m.put("weight", g.weight);
+                m.put("permissions", new ArrayList<>(g.permissions));
+                m.put("memberCount", gm.memberCount(g.name));
+                list.add(m);
+            }
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("groups", list);
+            data.put("count", list.size());
+            WebServer.sendJson(exchange, 200, Json.stringify(data));
+            return;
+        }
+
+        if (method.equals("POST") && parts.length == 3) {
+            String body = WebServer.readBody(exchange);
+            String name = extractJsonField(body, "name");
+            if (name == null) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"name required\"}");
+                return;
+            }
+            String prefix = extractJsonField(body, "prefix");
+            int weight = 0;
+            String weightStr = extractJsonField(body, "weight");
+            if (weightStr != null) {
+                try { weight = Integer.parseInt(weightStr); } catch (Exception ignored) {}
+            }
+            var g = gm.create(name, prefix == null ? "" : prefix, weight);
+            if (g == null) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"invalid or duplicate name\"}");
+                return;
+            }
+            WebServer.sendJson(exchange, 200, Json.stringify(Map.of("success", true, "name", g.name)));
+            return;
+        }
+
+        if (parts.length < 4) {
+            WebServer.sendJson(exchange, 400, "{\"error\":\"Bad request\"}");
+            return;
+        }
+        String group = parts[3];
+
+        if (method.equals("DELETE") && parts.length == 4) {
+            boolean ok = gm.delete(group);
+            WebServer.sendJson(exchange, ok ? 200 : 400, Json.stringify(Map.of("success", ok)));
+            return;
+        }
+
+        // POST /api/groups/{name}/permissions
+        if (method.equals("POST") && parts.length == 5 && parts[4].equals("permissions")) {
+            String body = WebServer.readBody(exchange);
+            String permission = extractJsonField(body, "permission");
+            String action = extractJsonField(body, "action");
+            if (permission == null || permission.trim().isEmpty()) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"permission required\"}");
+                return;
+            }
+            boolean remove = "remove".equalsIgnoreCase(action) || "del".equalsIgnoreCase(action);
+            boolean ok = remove ? gm.removePermission(group, permission) : gm.addPermission(group, permission);
+            WebServer.sendJson(exchange, ok ? 200 : 400, Json.stringify(Map.of("success", ok)));
+            return;
+        }
+
+        // POST|DELETE /api/groups/{name}/players/{player}
+        if (parts.length >= 6 && parts[4].equals("players")) {
+            String playerName = parts[5];
+            OfflinePlayer op = PlayerResolver.byName(playerName);
+            if (op == null) {
+                WebServer.sendJson(exchange, 404, "{\"error\":\"unknown player\"}");
+                return;
+            }
+            boolean ok;
+            if (method.equals("POST")) ok = gm.addPlayer(op.getUniqueId(), group);
+            else if (method.equals("DELETE")) ok = gm.removePlayer(op.getUniqueId(), group);
+            else ok = false;
+            WebServer.sendJson(exchange, ok ? 200 : 400, Json.stringify(Map.of("success", ok)));
+            return;
+        }
+
+        // PUT /api/groups/{name} — 更新前缀/权重
+        if (method.equals("PUT") && parts.length == 4) {
+            if (gm.get(group) == null) {
+                WebServer.sendJson(exchange, 404, "{\"error\":\"group not found\"}");
+                return;
+            }
+            String body = WebServer.readBody(exchange);
+            String prefix = extractJsonField(body, "prefix");
+            String weightStr = extractJsonField(body, "weight");
+            if (prefix != null) gm.setPrefix(group, prefix);
+            if (weightStr != null) {
+                try { gm.setWeight(group, Integer.parseInt(weightStr)); } catch (Exception ignored) {}
+            }
+            WebServer.sendJson(exchange, 200, "{\"success\":true}");
+            return;
+        }
+
+        WebServer.sendJson(exchange, 400, "{\"error\":\"Bad request\"}");
     }
 
     // ---------- Homes ----------

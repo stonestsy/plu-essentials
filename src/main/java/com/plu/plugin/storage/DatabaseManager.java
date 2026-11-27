@@ -155,6 +155,20 @@ public class DatabaseManager {
                     + "uuid VARCHAR(36), "
                     + "used_at BIGINT, "
                     + "PRIMARY KEY (code, uuid))");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "balances ("
+                    + "uuid VARCHAR(36) PRIMARY KEY, "
+                    + "name VARCHAR(64), "
+                    + "balance DOUBLE, "
+                    + "updated BIGINT)");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "groups ("
+                    + "name VARCHAR(64) PRIMARY KEY, "
+                    + "prefix VARCHAR(64), "
+                    + "weight INT, "
+                    + "permissions TEXT)");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "player_groups ("
+                    + "uuid VARCHAR(36), "
+                    + "group_name VARCHAR(64), "
+                    + "PRIMARY KEY (uuid, group_name))");
         }
     }
 

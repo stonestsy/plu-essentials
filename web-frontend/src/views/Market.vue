@@ -4,7 +4,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center">
         <b>玩家市场上架 ({{ listings.length }})</b>
         <el-tag :type="available ? 'success' : 'danger'">
-          {{ available ? '经济系统正常' : '经济系统不可用（需 Vault + 经济插件）' }}
+          {{ available ? '经济系统正常' : '经济系统已关闭（economy.enabled）' }}
         </el-tag>
       </div>
     </template>

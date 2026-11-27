@@ -62,6 +62,8 @@ public class PlayerListener implements Listener {
         plugin.getVanishManager().onJoin(player);
         plugin.getPlayerStatsManager().onJoin(player.getUniqueId(), player.getName());
         plugin.getTabManager().update(player);
+        plugin.getEconomyManager().ensureAccount(player);
+        plugin.getGroupManager().applyTo(player);
     }
 
     @EventHandler
@@ -70,6 +72,7 @@ public class PlayerListener implements Listener {
         plugin.getTpaManager().clearFor(player.getUniqueId());
         plugin.getVanishManager().remove(player.getUniqueId());
         plugin.getPlayerStatsManager().onQuit(player.getUniqueId());
+        plugin.getGroupManager().clear(player);
     }
 
     @EventHandler(ignoreCancelled = true)

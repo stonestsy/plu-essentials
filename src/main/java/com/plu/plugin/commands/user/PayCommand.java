@@ -19,7 +19,7 @@ public class PayCommand implements CommandExecutor {
             return true;
         }
         if (!plugin.getEconomyManager().available()) {
-            Msg.send(sender, plugin.getPrefix() + "&c经济系统不可用（需要 Vault 与经济插件）。");
+            Msg.send(sender, plugin.getPrefix() + "&c经济系统已关闭（config.yml 的 economy.enabled）。");
             return true;
         }
         if (args.length < 2) {

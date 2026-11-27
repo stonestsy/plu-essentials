@@ -7,13 +7,15 @@
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.2-62B47A?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square)
-![Version](https://img.shields.io/badge/version-2.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.1.0-blue?style=flat-square)
 ![API](https://img.shields.io/badge/api--version-1.21-lightgrey?style=flat-square)
-![Softdepend](https://img.shields.io/badge/softdepend-Vault%20%7C%20LuckPerms-yellow?style=flat-square)
+![Economy](https://img.shields.io/badge/economy-built--in-2ea44f?style=flat-square)
+![Groups](https://img.shields.io/badge/groups-built--in-2ea44f?style=flat-square)
+![Deps](https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square)
 ![Build](https://img.shields.io/badge/build-Maven%20%7C%20Vite-success?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-[功能](#功能特性) · [安装](#快速开始) · [配置](#配置说明) · [经济系统](#经济系统) · [命令](#命令) · [Web 后台](#web-管理后台) · [API](#rest-api) · [构建](#从源码构建)
+[功能](#功能特性) · [安装](#快速开始) · [配置](#配置说明) · [经济系统](#经济系统) · [权限组](#权限组) · [命令](#命令) · [Web 后台](#web-管理后台) · [API](#rest-api) · [构建](#从源码构建)
 
 **作者 / 开发者 / 仓库维护者：[stonestsy](https://github.com/stonestsy)**
 
@@ -27,15 +29,15 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 
 不引入重量级框架，Web 前端为 Vue 3 构建产物，直接打进 jar；数据层支持 **MySQL** 与 **YAML** 两种后端，按需切换。
 
-**经济是核心模块**：余额、转账、财富排行、玩家市场（GUI 交易）、兑换码发币、后台余额调整与成交记录管理形成闭环。经济能力通过 Vault 接入任意兼容的经济插件，详情见 [经济系统](#经济系统)。
+**经济与权限组均为内置实现**：余额、转账、财富排行、玩家市场（GUI 交易）、兑换码发币、后台余额调整形成闭环；权限组支持分组、前缀、权重、权限节点，并在登录时自动注入 Bukkit 权限体系。**无需安装 Vault、经济插件或 LuckPerms**，详见 [经济系统](#经济系统) 与 [权限组](#权限组)。
 
 | 项目 | 说明 |
 |------|------|
-| 版本 | 2.0.0 |
+| 版本 | 2.1.0 |
 | 服务端 | Bukkit / Spigot / Paper 1.21.2 |
 | Java | 21 |
-| 产物 | `PluEssentials-2.0.0.jar`（约 4.9 MB，内含 MySQL 驱动与前端资源） |
-| 软依赖 | Vault（经济）、LuckPerms（权限组），缺失时自动降级 |
+| 产物 | `PluEssentials-2.1.0.jar`（约 4.9 MB，内含 MySQL 驱动与前端资源） |
+| 外部依赖 | **无**（经济、权限组、Web 后台全部内置） |
 
 ---
 
@@ -70,17 +72,18 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 | 白名单 | `/whitelist on\|off\|add\|remove\|list`（别名 `/wl`） |
 | 审计统计 | `/chatlog`（聊天记录）、`/seen`（首次登录 / 在线时长） |
 | 强制操作 | `/sudo` `/healall` `/feedall` |
+| 权限组 | `/group`（分组、前缀、权重、权限节点，替代 LuckPerms） |
 | 消息维护 | `/broadcast` `/plureload` `/setwarp` `/delwarp` |
 
 ### Web 管理后台
 
 浏览器打开 `http://<服务器IP>:8080/` 即可管理：
 
-- **仪表盘** — TPS、内存、在线人数、运行时长、Vault / LuckPerms 检测状态
+- **仪表盘** — TPS、内存、在线人数、运行时长、内置经济与权限组状态、全服货币总量
 - **玩家管理** — 踢出 / 治疗 / 喂食 / 击杀 / 无敌 / 飞行 / 清包 / 改模式 / 私聊 / 传送 / 查看背包 / 封禁
 - **控制台** — 实时日志 + 执行任意命令
 - **插件与世界** — 启停重载插件；时间 / 天气 / 难度
-- **经济 · 玩家市场 · 领地 · 兑换码** — 全图形化管理
+- **经济 · 玩家市场 · 权限组 · 领地 · 兑换码** — 全图形化管理
 - **公告与规则** — 网页编辑，游戏内书本渲染
 - **登录账号 · 封禁 · IP 封禁 · 白名单 · 聊天记录**
 - **Warp · 定时任务（Cron）· 服务器控制**（关服 / 重载 / 广播）
@@ -97,14 +100,13 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 ### 2. 安装
 
 ```text
-1. 下载 PluEssentials-2.0.0.jar
+1. 下载 PluEssentials-2.1.0.jar
 2. 放入服务端 plugins/ 目录
 3. 启动服务端，自动生成 plugins/PluEssentials/ 配置与数据文件
-4. （可选）安装 Vault + 经济插件 → 启用经济与市场
-5. （可选）安装 LuckPerms      → 启用权限组管理
+4. 完成 —— 经济、权限组、Web 后台开箱即用，无需安装任何前置插件
 ```
 
-> **注意**：Vault 本身只是对接层，还需安装一个提供经济的插件（EssentialsX、CMI、Craftconomy 等），否则经济相关功能不可用，仪表盘会显示「Vault 已安装（缺少经济插件）」。
+> 经济、权限组、登录、市场、领地全部由本插件自身实现，不依赖 Vault / LuckPerms。若你原本装了它们，可以保留（互不冲突），也可以移除。
 
 ### 3. 登录后台
 
@@ -192,6 +194,14 @@ market:
   tax-percent: 0           # 成交税率（百分比，0 = 免税）
   max-items-per-player: 10 # 每人最多上架数量
 
+# ---------- 内置经济 ----------
+economy:
+  enabled: true
+  currency-name: "金币"     # 货币名称，用于消息与网页展示
+  currency-symbol: ""      # 货币符号，如 "$" 会显示为 $1,234.56
+  decimals: 2              # 小数位数（0-4）
+  starting-balance: 100    # 首次进服发放的初始余额（0 = 不发放）
+
 # ---------- 领地 ----------
 claims:
   max-per-player: 2        # 每人最多领地数量
@@ -253,40 +263,42 @@ TAB 每 5 秒刷新一次。
 
 经济是本项目的核心模块之一，由 **货币操作 + 玩家市场 + 兑换码 + 财富排行 + 后台管理** 五部分组成。
 
-> 重要：**余额数据由 Vault 背后的经济插件保管**，PluEssentials 不另存一份余额，只负责调用与展示。因此换经济插件会换掉玩家余额，但市场与兑换码的记录仍在本插件的数据表里。
+> 整套经济**完全内置**：余额存在本插件自己的数据表（`plu_balances` / `balances.yml`），**不需要 Vault，也不需要任何经济插件**。
 
 ```mermaid
 flowchart LR
-    P[玩家] -->|/money /pay /baltop| EM[EconomyManager]
+    P[玩家] -->|/money /pay /baltop| EM[内置经济管理器]
     P -->|/market 上架·购买·下架| MK[玩家市场]
     P -->|/redeem 兑换| RD[兑换码]
     MK -->|扣款 · 结算 · 抽税| EM
     RD -->|兑换入账| EM
-    EM -->|Vault Economy API| VP[经济插件<br/>EssentialsX / CMI / Craftconomy]
-    VP --> DB[(余额数据)]
+    EM --> ST[(plu_balances / balances.yml)]
     WEB[Web 管理后台] -->|REST API| EM
     WEB --> MK
     WEB --> RD
 ```
 
-### 1. 依赖与启用
+### 1. 启用与配置
 
-| 必需 | 说明 |
+无需任何前置插件，开箱即用。相关配置：
+
+```yaml
+economy:
+  enabled: true            # false 则关闭全部经济功能（市场、兑换码、排行一并停用）
+  currency-name: "金币"     # 货币名称，显示在消息与网页
+  currency-symbol: ""      # 货币符号，如 "$"，非空时显示为 $1,234.56
+  decimals: 2              # 小数位数（0-4），余额按此精度四舍五入
+  starting-balance: 100    # 玩家首次进服自动发放的初始余额（0 = 不发放）
+```
+
+| 场景 | 表现 |
 |------|------|
-| **Vault** | 经济服务对接层，仅安装它**不会**产生任何货币 |
-| **一个经济插件** | 真正提供余额与货币单位，如 EssentialsX、CMI、Craftconomy3 等实现了 Vault `Economy` 接口的插件 |
+| 正常 | `/money` 等命令可用，仪表盘显示「内置经济」绿色 |
+| `enabled: false` | 经济相关命令提示「经济系统已关闭」，市场、兑换码同步不可用，经济接口返回 503 |
+| 玩家首次进服 | 自动建档并按 `starting-balance` 发放初始余额 |
 
-不需要在 `config.yml` 里开启任何开关——插件启动时自动探测，探测不到就静默降级（相关命令会提示不可用）。
+> 若从旧版本（Vault 方案）升级：旧余额存在原经济插件里，不会自动导入。需要时可用后台「经济系统」页按玩家名逐个 `set`，或先用 `/money` 记录后手工迁移。
 
-**检测机制**：`VaultHook.isAvailable()` 为懒检测。经济插件若晚于 PluEssentials 加载（很常见），下一次调用会自动重试注册查询，**无需重启或 reload**。
-
-**状态对照**（仪表盘顶部标签 / `/api/dashboard` 字段）：
-
-| 现象 | `vaultInstalled` | `vaultEnabled` | 原因 |
-|------|------------------|----------------|------|
-| 一切正常 | `true` | `true` | Vault + 经济插件均已就绪 |
-| 「Vault 已安装（缺少经济插件）」 | `true` | `false` | 装了 Vault，但没有插件提供 Economy 服务 |
-| 「Vault 经济（未安装）」 | `false` | `false` | 完全没装 Vault |
 
 ### 2. 货币操作
 
@@ -417,8 +429,16 @@ market:
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/economy/{player}` | 查询余额，返回 `player` / `balance` / `currency` |
+| GET | `/api/economy/{player}` | 余额、货币名与格式化文本 |
 | POST | `/api/economy/{player}/{set\|add\|remove}` | 请求体 `{"amount":100}`，返回最新余额 |
+| GET | `/api/permissions/{player}` | 主分组、分组列表、前缀、生效权限（支持离线玩家） |
+| GET | `/api/groups` | 分组列表（含权限节点与成员数） |
+| POST | `/api/groups` | `{"name":"vip","prefix":"&6[VIP]","weight":10}` |
+| PUT | `/api/groups/{name}` | 更新 `prefix` / `weight` |
+| DELETE | `/api/groups/{name}` | 删除分组 |
+| POST | `/api/groups/{name}/permissions` | `{"permission":"plu.fly","action":"add"}` |
+| POST DELETE | `/api/groups/{name}/players/{player}` | 玩家入组 / 离组 |
+| GET | `/api/homes/{player}` | 家列表与上限 |
 | GET | `/api/market` | 上架列表（含 `available` 表示经济是否可用） |
 | DELETE | `/api/market/{id}` | 删除上架 |
 | GET | `/api/redeem` | 兑换码列表（含 `expired` 标记） |
@@ -426,26 +446,84 @@ market:
 | POST | `/api/redeem/{code}/toggle` | 启用 / 停用 |
 | DELETE | `/api/redeem/{code}` | 删除 |
 
-经济接口在 Vault 不可用时返回 `503`，便于调用方区分「服务未就绪」与「参数错误」。
+经济接口在经济系统被关闭时返回 `503`，便于调用方区分「功能已关闭」与「参数错误」。
 
 ### 6. 数据落点
 
 | 数据 | 存放位置 |
 |------|----------|
-| 玩家余额 | **经济插件自己的存储**（PluEssentials 不落库） |
+| 玩家余额 | `plu_balances`：`uuid / name / balance / updated` |
 | 市场挂单 | `plu_market`：`id / seller / seller_name / item / price / created` |
 | 兑换码定义 | `plu_redeem_codes`：`code / amount / max_uses / used_count / expires / created / creator / enabled` |
 | 兑换记录 | `plu_redeem_uses`：`code / uuid / used_at`（联合主键防重复） |
 
-YAML 模式下分别落在 `market.yml`、`redeem.yml`。**切换存储后端不会自动迁移**。
+YAML 模式下分别落在 `balances.yml`、`market.yml`、`redeem.yml`。余额每笔交易即时改内存，MySQL 模式直写数据库，YAML 模式每 60 秒落盘并在关服时强制保存。**切换存储后端不会自动迁移**。
 
 ### 7. 运维建议
 
 - **税率**：`tax-percent` 建议设 3~10，作为服务器回收货币的水槽；设为 0 则市场纯流通
 - **上架上限**：`max-items-per-player` 建议 5~15，过高会让 GUI 翻页过多、审核困难
 - **兑换码**：批量发币时优先用「总次数 + 有效期」双限制，避免链接泄露后被无限领取；活动结束后用 `toggle` 停用而不是删除，保留审计痕迹
-- **余额调整**：后台的 `add` / `set` 会直接写入经济插件，属于强操作，建议操作前先 `/money <玩家>` 记录原值
-- **备份**：余额随经济插件备份；市场与兑换码随本插件的数据表或 YAML 备份，两者要一起备份才能完整还原
+- **余额调整**：后台的 `add` / `set` 会直接写入本插件余额表，属于强操作，建议操作前先 `/money <玩家>` 记录原值
+- **备份**：余额、市场挂单、兑换码同在本插件的数据表（或 YAML 文件）中，一起备份即可完整还原
+
+---
+
+## 权限组
+
+内置权限组系统用于替代 LuckPerms：支持分组、前缀、权重与权限节点，并在玩家登录时自动注入 Bukkit 权限体系，**无需安装任何权限插件**。
+
+```mermaid
+flowchart LR
+    G[分组<br/>前缀 · 权重 · 权限节点] -->|玩家入组| P[玩家]
+    P -->|登录| A[PermissionAttachment 注入]
+    G -->|权限集合| A
+    A --> B[Bukkit 权限判定<br/>hasPermission]
+    W[Web 后台 / /group] --> G
+```
+
+### 规则
+
+- 一个玩家可属于多个组，**权重最高**的组为主分组（决定展示前缀）
+- 组权限节点为字符串，前缀 `-` 表示否定节点（如 `-plu.god`）
+- 权限通过 `PermissionAttachment` 注入；修改分组或权限会**立即对在线成员重新应用**
+- `default` 组不可删除，未显式分组的玩家默认属于 `default`
+- 分组名限制：小写字母、数字、下划线、连字符，最长 32 位
+
+### 命令
+
+| 命令 | 权限 | 说明 |
+|------|------|------|
+| `/group list` | `plu.group` | 列出所有分组（权重、前缀、节点数） |
+| `/group info <组名>` | `plu.group` | 查看某分组的全部权限节点 |
+| `/group check [玩家]` | `plu.group` | 查看玩家所属分组、主分组、生效权限数 |
+| `/group create <组名> [前缀] [权重]` | `plu.group.admin` | 创建分组 |
+| `/group delete <组名>` | `plu.group.admin` | 删除分组（default 受保护） |
+| `/group prefix <组名> [前缀]` | `plu.group.admin` | 设置前缀，留空清除 |
+| `/group weight <组名> <权重>` | `plu.group.admin` | 设置权重 |
+| `/group perm <组名> <add\|remove> <节点>` | `plu.group.admin` | 增删权限节点 |
+| `/group add <玩家> <组名>` | `plu.group.admin` | 玩家加入分组 |
+| `/group remove <玩家> <组名>` | `plu.group.admin` | 玩家移出分组 |
+
+别名：`/groups`、`/rank`。
+
+### 示例
+
+```text
+# 创建 VIP 组：金色前缀 + 权重 10
+/group create vip &6[VIP] 10
+/group perm vip add plu.fly
+/group perm vip add plu.home.limit.vip
+/group add Steve vip
+
+# 查看结果
+/group info vip
+/group check Steve
+```
+
+### 与 LuckPerms 共存
+
+两者可以同时安装，但会形成两个权限来源：LuckPerms 直接判权，本插件通过权限附件追加。建议只保留一套作为权威来源，避免同一节点在不同处配置不一致。
 
 ---
 
@@ -520,6 +598,7 @@ YAML 模式下分别落在 `market.yml`、`redeem.yml`。**切换存储后端不
 | `/setwarp <name>` | — | `plu.setwarp` | 创建地标 |
 | `/delwarp <name>` | — | `plu.delwarp` | 删除地标 |
 | `/plureload` | — | `plu.reload` | 重载配置与全部管理器 |
+| `/group <list\|info\|create\|delete\|prefix\|weight\|perm\|add\|remove\|check>` | `/rank` | `plu.group` / `plu.group.admin` | 内置权限组管理 |
 | `/redeem create <兑换码\|#> <金额> [次数] [时长]` | — | `plu.redeem.admin` | 创建兑换码 |
 | `/redeem list` / `toggle` / `delete` | — | `plu.redeem.admin` | 兑换码管理 |
 
@@ -582,6 +661,8 @@ YAML 模式下分别落在 `market.yml`、`redeem.yml`。**切换存储后端不
 | `plu.rules` `plu.news` | 所有人 | 公告与规则 |
 | `plu.redeem` | 所有人 | 兑换码兑换 |
 | `plu.redeem.admin` | OP | 管理兑换码 |
+| `plu.group` | 所有人 | 查看权限组 |
+| `plu.group.admin` | OP | 创建 / 删除 / 改权限 / 分配玩家 |
 | `plu.login.bypass` | OP | 跳过登录要求 |
 | `plu.setspawn` `plu.setwarp` `plu.delwarp` | OP | 维护类 |
 | `plu.fly` `plu.gamemode` `plu.heal` `plu.feed` `plu.god` `plu.vanish` `plu.speed` `plu.clear` | OP | 玩家状态 |
@@ -726,6 +807,9 @@ Authorization: Bearer <token>
 | `plu_accounts` | uuid, name, salt, hash, registered | 登录账号（加盐哈希） |
 | `plu_redeem_codes` | code, amount, max_uses, used_count, expires, created, creator, enabled | 兑换码 |
 | `plu_redeem_uses` | code, uuid, used_at | 兑换记录（防重复） |
+| `plu_balances` | uuid, name, balance, updated | 内置经济余额 |
+| `plu_groups` | name, prefix, weight, permissions | 权限组定义（权限为逗号分隔） |
+| `plu_player_groups` | uuid, group_name | 玩家与分组的关联 |
 
 </details>
 
@@ -756,7 +840,7 @@ cd ..
 mvn clean package
 ```
 
-产物：`target/PluEssentials-2.0.0.jar`
+产物：`target/PluEssentials-2.1.0.jar`
 
 > 后端编译启用了 `-Xlint:all,-classfile`，构建输出 0 警告。
 > MySQL 驱动与 Vue 资源由 `maven-shade-plugin` 打入 jar，最终约 4.9 MB。
@@ -797,15 +881,15 @@ plu/
 ## 常见问题
 
 <details>
-<summary><b>仪表盘显示「Vault 已安装（缺少经济插件）」</b></summary>
+<summary><b>经济系统提示「已关闭」</b></summary>
 
-Vault 本身不提供经济，需再安装 EssentialsX、CMI 等经济插件。插件会自动重试检测，无需重启。
+检查 `config.yml` 的 `economy.enabled` 是否为 `true`，修改后执行 `/plureload`。关闭状态下市场、兑换码、排行会一并停用。
 </details>
 
 <details>
-<summary><b>市场打不开，提示经济系统不可用</b></summary>
+<summary><b>市场打不开，提示经济系统已关闭</b></summary>
 
-同上，市场依赖经济系统做扣款与结算。
+同上，市场依赖内置经济做扣款与结算，请确认 `economy.enabled: true`。
 </details>
 
 <details>
@@ -827,9 +911,15 @@ Vault 本身不提供经济，需再安装 EssentialsX、CMI 等经济插件。�
 </details>
 
 <details>
-<summary><b>换经济插件后玩家余额没了</b></summary>
+<summary><b>从旧版（Vault 经济）升级后余额变成 0</b></summary>
 
-余额由经济插件自己存储，PluEssentials 只调用不落库。更换经济插件等于更换了余额数据源，市场挂单与兑换码仍在 `plu_market` / `plu_redeem_*` 中，可在后台查看。
+旧余额存在原来那套经济插件里，本插件不会自动读取。可在后台「经济系统」页按玩家名 `set` 目标金额，或用 `/money` 记录旧值后逐个迁移。
+</details>
+
+<details>
+<summary><b>权限组改了但玩家仍是旧权限</b></summary>
+
+在线玩家会在改动后立即重新应用；离线玩家需下次登录生效。若同时安装了 LuckPerms，注意不要在两处配置同一节点。
 </details>
 
 <details>

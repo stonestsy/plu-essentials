@@ -4,8 +4,7 @@ main: com.plu.plugin.Main
 api-version: '1.21'
 author: stonestsy
 authors: [stonestsy]
-description: Essentials plugin with user, admin and web-panel features for MC 1.21.2
-softdepend: [Vault, LuckPerms]
+description: Essentials plugin with built-in economy, groups, market, claims and web panel for MC 1.21.2
 
 commands:
   # ---- User commands ----
@@ -230,6 +229,13 @@ commands:
     aliases: [redeemcode, cdkey]
     permission: plu.redeem
 
+  # ---- Permission groups ----
+  group:
+    description: Manage built-in permission groups
+    usage: /group <list|info|create|delete|prefix|weight|perm|add|remove|check>
+    aliases: [groups, rank]
+    permission: plu.group
+
 permissions:
   plu.home:
     description: Allow using /home
@@ -368,4 +374,10 @@ permissions:
     default: true
   plu.redeem.admin:
     description: Allow creating and managing redeem codes
+    default: op
+  plu.group:
+    description: Allow viewing permission groups
+    default: true
+  plu.group.admin:
+    description: Allow creating and managing permission groups
     default: op

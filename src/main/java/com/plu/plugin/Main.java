@@ -9,8 +9,6 @@ import com.plu.plugin.listeners.PlayerListener;
 import com.plu.plugin.managers.*;
 import com.plu.plugin.storage.DatabaseManager;
 import com.plu.plugin.web.WebServer;
-import com.plu.plugin.web.hooks.LuckPermsHook;
-import com.plu.plugin.web.hooks.VaultHook;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,6 +31,7 @@ public final class Main extends JavaPlugin {
     private ChatLogManager chatLogManager;
     private PlayerStatsManager playerStatsManager;
     private EconomyManager economyManager;
+    private GroupManager groupManager;
     private MarketManager marketManager;
     private ClaimManager claimManager;
     private LoginManager loginManager;
@@ -68,7 +67,8 @@ public final class Main extends JavaPlugin {
         this.whitelistManager = new WhitelistManager(this, databaseManager);
         this.chatLogManager = new ChatLogManager(this, databaseManager);
         this.playerStatsManager = new PlayerStatsManager(this, databaseManager);
-        this.economyManager = new EconomyManager(this);
+        this.economyManager = new EconomyManager(this, databaseManager);
+        this.groupManager = new GroupManager(this, databaseManager);
         this.marketManager = new MarketManager(this, databaseManager);
         this.claimManager = new ClaimManager(this, databaseManager);
         this.loginManager = new LoginManager(this, databaseManager);
@@ -86,6 +86,8 @@ public final class Main extends JavaPlugin {
         whitelistManager.load();
         chatLogManager.load();
         playerStatsManager.load();
+        economyManager.load();
+        groupManager.load();
         marketManager.load();
         claimManager.load();
         loginManager.load();
@@ -94,9 +96,11 @@ public final class Main extends JavaPlugin {
         taskManager.start();
         tabManager.start();
 
-        // Soft-dependency hooks (Vault, LuckPerms)
-        VaultHook.setup();
-        LuckPermsHook.setup();
+        // 定期把内存中的余额写入 YAML（MySQL 模式为直写，无操作）
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            economyManager.flush();
+            groupManager.flush();
+        }, 1200L, 1200L);
 
         // Listeners
         Bukkit.getPluginManager().registerEvents(new PlayerListener(this), this);
@@ -122,6 +126,8 @@ public final class Main extends JavaPlugin {
         if (tabManager != null) tabManager.stop();
         if (homeManager != null) homeManager.save();
         if (spawnManager != null) spawnManager.save();
+        if (economyManager != null) economyManager.flush();
+        if (groupManager != null) groupManager.flush();
         if (databaseManager != null) databaseManager.disconnect();
         getLogger().info("PluEssentials disabled.");
     }
@@ -179,6 +185,7 @@ public final class Main extends JavaPlugin {
         getCommand("speed").setExecutor(new SpeedCommand(this));
         getCommand("healall").setExecutor(new HealallCommand(this));
         getCommand("feedall").setExecutor(new FeedallCommand(this));
+        getCommand("group").setExecutor(new GroupCommand(this));
     }
 
     public void reload() {
@@ -193,6 +200,8 @@ public final class Main extends JavaPlugin {
         whitelistManager.load();
         chatLogManager.load();
         playerStatsManager.load();
+        economyManager.load();
+        groupManager.load();
         marketManager.load();
         claimManager.load();
         loginManager.load();
@@ -200,8 +209,6 @@ public final class Main extends JavaPlugin {
         redeemManager.load();
         tabManager.start();
         if (webServer != null) webServer.reload();
-        VaultHook.setup();
-        LuckPermsHook.setup();
     }
 
     public long getPluginTime() {
@@ -224,6 +231,7 @@ public final class Main extends JavaPlugin {
     public ChatLogManager getChatLogManager() { return chatLogManager; }
     public PlayerStatsManager getPlayerStatsManager() { return playerStatsManager; }
     public EconomyManager getEconomyManager() { return economyManager; }
+    public GroupManager getGroupManager() { return groupManager; }
     public MarketManager getMarketManager() { return marketManager; }
     public ClaimManager getClaimManager() { return claimManager; }
     public LoginManager getLoginManager() { return loginManager; }

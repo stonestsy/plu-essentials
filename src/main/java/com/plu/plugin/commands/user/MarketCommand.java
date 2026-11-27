@@ -22,7 +22,7 @@ public class MarketCommand implements CommandExecutor {
             return true;
         }
         if (!plugin.getEconomyManager().available()) {
-            Msg.send(player, plugin.getPrefix() + "&c经济系统不可用（需要 Vault 与经济插件），市场暂不可用。");
+            Msg.send(player, plugin.getPrefix() + "&c经济系统已关闭（config.yml 的 economy.enabled），市场暂不可用。");
             return true;
         }
         if (args.length == 0) {

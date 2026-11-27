@@ -63,8 +63,8 @@ onMounted(async () => {
     { label: '运行时间', value: upDays + '天' + upHours + '时' + upMins + '分', icon: 'Clock', color: '#7ee787' }
   ]
   hooks.value = [
-    { name: d.vaultEnabled ? 'Vault 经济' : (d.vaultInstalled ? 'Vault 已安装（缺少经济插件）' : 'Vault 经济（未安装）'), ok: d.vaultEnabled },
-    { name: 'LuckPerms', ok: d.luckpermsEnabled }
+    { name: '内置经济', ok: d.economyEnabled },
+    { name: '内置权限组', ok: d.groupsEnabled }
   ]
 })
 </script>

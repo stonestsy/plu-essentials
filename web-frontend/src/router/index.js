@@ -13,6 +13,7 @@ const routes = [
       { path: 'plugins', name: 'plugins', component: () => import('../views/Plugins.vue'), meta: { title: '插件管理', icon: 'Box' } },
       { path: 'worlds', name: 'worlds', component: () => import('../views/Worlds.vue'), meta: { title: '世界管理', icon: 'Earth' } },
       { path: 'economy', name: 'economy', component: () => import('../views/Economy.vue'), meta: { title: '经济系统', icon: 'Money' } },
+      { path: 'groups', name: 'groups', component: () => import('../views/Groups.vue'), meta: { title: '权限组', icon: 'UserFilled' } },
       { path: 'market', name: 'market', component: () => import('../views/Market.vue'), meta: { title: '玩家市场', icon: 'Shop' } },
       { path: 'claims', name: 'claims', component: () => import('../views/Claims.vue'), meta: { title: '领地管理', icon: 'MapLocation' } },
       { path: 'redeem', name: 'redeem', component: () => import('../views/Redeem.vue'), meta: { title: '兑换码', icon: 'Ticket' } },

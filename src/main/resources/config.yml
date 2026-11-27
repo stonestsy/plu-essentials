@@ -86,6 +86,17 @@ market:
   # 每人最多上架数量
   max-items-per-player: 10
 
+# 内置经济系统（不依赖 Vault 或任何经济插件）
+economy:
+  enabled: true
+  # 货币名称与符号，用于消息与网页展示
+  currency-name: "金币"
+  currency-symbol: ""
+  # 小数位数（0-4）
+  decimals: 2
+  # 玩家首次进服发放的初始余额（0 = 不发放）
+  starting-balance: 100
+
 # 领地
 claims:
   # 每人最多领地数量
