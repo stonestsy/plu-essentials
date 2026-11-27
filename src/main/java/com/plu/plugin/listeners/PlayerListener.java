@@ -27,6 +27,14 @@ public class PlayerListener implements Listener {
     public void onLogin(PlayerLoginEvent event) {
         Player player = event.getPlayer();
 
+        // 中文 ID 兼容：默认不拦截非 ASCII 名字（是否允许由服务端/客户端决定）
+        if (!plugin.getConfig().getBoolean("compat.allow-non-ascii-names", true)
+                && !isAscii(player.getName())) {
+            event.setResult(PlayerLoginEvent.Result.KICK_OTHER);
+            event.setKickMessage("§c本服务器仅允许英文数字用户名。");
+            return;
+        }
+
         // IP ban check
         String ip = event.getAddress() != null ? event.getAddress().getHostAddress() : "";
         if (!ip.isEmpty() && plugin.getIpBanManager().isBanned(ip)) {
@@ -59,6 +67,8 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        plugin.getNicknameManager().rememberName(player.getUniqueId(), player.getName());
+        plugin.getNicknameManager().apply(player);
         plugin.getVanishManager().onJoin(player);
         plugin.getPlayerStatsManager().onJoin(player.getUniqueId(), player.getName());
         plugin.getTabManager().update(player);
@@ -112,5 +122,13 @@ public class PlayerListener implements Listener {
         if (plugin.getGodManager().isGod(player.getUniqueId())) {
             plugin.getGodManager().remove(player.getUniqueId());
         }
+    }
+
+    private boolean isAscii(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c < 0x20 || c > 0x7e) return false;
+        }
+        return true;
     }
 }

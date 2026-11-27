@@ -113,3 +113,62 @@ tab:
 # 登录系统（注册 + 登录）
 login:
   enabled: true
+
+# 中文昵称（只影响显示，不改变真实登录名）
+nickname:
+  enabled: true
+  # 昵称最大长度（按字符数，中文算 1 个）
+  max-length: 16
+
+# 兼容性
+compat:
+  # 是否允许非 ASCII（中文）游戏名。原版客户端仍只允许英文名，
+  # 中文 ID 需要改版客户端或代理；开启后本插件不会主动拒绝这类玩家。
+  allow-non-ascii-names: true
+
+# 自定义菜单（menus.yml）
+menus:
+  enabled: true
+
+# NPC
+npcs:
+  enabled: true
+  # 已安装 Citizens 时，是否所有 NPC 都交给 Citizens 生成（true 可支持皮肤）
+  # 设为 false 时，只有 type=player 的 NPC 会尝试 Citizens
+  use-citizens: false
+
+# 命令告示牌
+cmdsigns:
+  enabled: true
+  # 创建时是否自动改写告示牌前三行作为标识
+  write-label: true
+
+# 充值系统（微信支付 APIv3 JSAPI 公众号支付）
+wechatpay:
+  # 总开关。未开启时 /charge 与充值页不可用
+  enabled: false
+  # 模拟支付：true 时跳过微信，直接确认发货，用于测试流程
+  # 凭据不完整时也会自动降级为模拟支付
+  mock: true
+  app-id: ""
+  app-secret: ""
+  mch-id: ""
+  # 商户 API 证书序列号
+  cert-serial-no: ""
+  # 商户私钥（PKCS#8 PEM，相对路径基于插件数据目录）
+  private-key-path: "apiclient_key.pem"
+  # APIv3 密钥（32 位）
+  api-v3-key: ""
+  # 微信支付回调地址，例如 https://mc.example.com/api/pay/notify
+  notify-url: ""
+  # 玩家可访问的站点地址，用于生成 /pay 与 OAuth 回调
+  # 留空时使用 http://127.0.0.1:端口
+  public-base-url: ""
+  # 微信支付平台证书（配置后会校验回调签名，生产环境建议配置）
+  platform-cert-path: ""
+  description: "Minecraft 服务器充值"
+
+recharge:
+  # 单笔金额限制（分）
+  min-fen: 1
+  max-fen: 1000000

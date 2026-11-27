@@ -1,10 +1,16 @@
 package com.plu.plugin.web;
 
 import com.plu.plugin.Main;
+import com.plu.plugin.managers.MenuManager;
+import com.plu.plugin.managers.NpcManager;
+import com.plu.plugin.managers.RechargeManager;
+import com.plu.plugin.managers.SignManager;
 import com.plu.plugin.managers.TaskManager;
 import com.plu.plugin.util.PlayerResolver;
+import com.plu.plugin.util.Values;
 import com.sun.net.httpserver.HttpExchange;
 import org.bukkit.*;
+import org.bukkit.block.Sign;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -92,6 +98,11 @@ public class ApiRouter {
                     else if (path.startsWith("/api/announcements")) handleAnnouncements(exchange, parts, method);
                     else if (path.startsWith("/api/accounts")) handleAccounts(exchange);
                     else if (path.startsWith("/api/redeem")) handleRedeem(exchange, parts, method);
+                    else if (path.startsWith("/api/pay")) handlePay(exchange, parts, method);
+                    else if (path.startsWith("/api/nicknames")) handleNicknames(exchange, parts, method);
+                    else if (path.startsWith("/api/menus")) handleMenus(exchange, parts, method);
+                    else if (path.startsWith("/api/npcs")) handleNpcs(exchange, parts, method);
+                    else if (path.startsWith("/api/signs")) handleSigns(exchange, parts, method);
                     else if (path.equals("/api/broadcast") && method.equals("POST")) handleBroadcast(exchange);
                     else if (path.equals("/api/server/stop") && method.equals("POST")) handleServerStop(exchange);
                     else if (path.equals("/api/server/reload") && method.equals("POST")) handleServerReload(exchange);
@@ -1177,6 +1188,420 @@ public class ApiRouter {
     }
 
     /** 朴素解析 JSON 字符串数组：["a","b","c"]。 */
+    // ---------- Recharge (admin) ----------
+    private void handlePay(HttpExchange exchange, String[] parts, String method) throws IOException {
+        RechargeManager recharge = plugin.getRechargeManager();
+
+        if (parts.length == 3 && method.equals("GET")) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("enabled", recharge.isEnabled());
+            result.put("mock", recharge.isMock());
+            List<Map<String, Object>> packages = new ArrayList<>();
+            for (RechargeManager.Package p : recharge.packages()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", p.id);
+                m.put("name", p.name);
+                m.put("priceFen", p.priceFen);
+                m.put("price", p.priceFen / 100.0);
+                m.put("coins", p.coins);
+                m.put("enabled", p.enabled);
+                packages.add(m);
+            }
+            result.put("packages", packages);
+            List<Map<String, Object>> orders = new ArrayList<>();
+            for (RechargeManager.Order o : recharge.recentOrders(200)) orders.add(recharge.toWeb(o));
+            result.put("orders", orders);
+            WebServer.sendJson(exchange, 200, Json.stringify(result));
+            return;
+        }
+
+        if (parts.length >= 4 && parts[3].equals("packages")) {
+            if (method.equals("POST") || method.equals("PUT")) {
+                Object parsed = Json.parse(WebServer.readBody(exchange));
+                if (!(parsed instanceof Map<?, ?> body)) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                    return;
+                }
+                RechargeManager.Package p = new RechargeManager.Package();
+                p.id = method.equals("PUT") && parts.length >= 5 ? parts[4] : strVal(body, "id");
+                p.name = strVal(body, "name");
+                p.priceFen = asLongVal(body.get("priceFen"), 0);
+                p.coins = asDoubleVal(body.get("coins"), 0);
+                p.enabled = body.get("enabled") == null || Boolean.parseBoolean(String.valueOf(body.get("enabled")));
+                if (p.id == null || p.id.isBlank() || recharge.upsertPackage(p) == null) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"礼包参数无效\"}");
+                    return;
+                }
+                WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+                return;
+            }
+            if (method.equals("DELETE") && parts.length >= 5) {
+                boolean ok = recharge.deletePackage(parts[4]);
+                WebServer.sendJson(exchange, ok ? 200 : 404, ok ? "{\"ok\":true}" : "{\"error\":\"礼包不存在\"}");
+                return;
+            }
+        }
+
+        if (parts.length >= 6 && parts[3].equals("orders") && parts[5].equals("confirm")
+                && method.equals("POST")) {
+            boolean ok = recharge.markPaid(parts[4], "MANUAL", 0, "admin");
+            WebServer.sendJson(exchange, ok ? 200 : 400, ok ? "{\"ok\":true}" : "{\"error\":\"订单不存在或已处理\"}");
+            return;
+        }
+        WebServer.sendJson(exchange, 404, "{\"error\":\"Not found\"}");
+    }
+
+    // ---------- Nicknames ----------
+    private void handleNicknames(HttpExchange exchange, String[] parts, String method) throws IOException {
+        if (method.equals("GET")) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (Map.Entry<UUID, String> e : plugin.getNicknameManager().all().entrySet()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("uuid", e.getKey().toString());
+                m.put("name", plugin.getNicknameManager().knownName(e.getKey()));
+                m.put("nick", e.getValue());
+                list.add(m);
+            }
+            WebServer.sendJson(exchange, 200, Json.stringify(Map.of("nicknames", list)));
+            return;
+        }
+        if (method.equals("POST")) {
+            Object parsed = Json.parse(WebServer.readBody(exchange));
+            if (!(parsed instanceof Map<?, ?> body)) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                return;
+            }
+            String name = strVal(body, "name");
+            String nick = strVal(body, "nick");
+            UUID uuid = plugin.getNicknameManager().uuidByName(name);
+            if (uuid == null) {
+                WebServer.sendJson(exchange, 404, "{\"error\":\"找不到玩家\"}");
+                return;
+            }
+            boolean ok = plugin.getNicknameManager().set(uuid, name, nick == null ? "" : nick);
+            if (!ok) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"昵称过长\"}");
+                return;
+            }
+            applyNickname(uuid);
+            WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+            return;
+        }
+        if (method.equals("DELETE") && parts.length >= 4) {
+            try {
+                UUID uuid = UUID.fromString(parts[3]);
+                plugin.getNicknameManager().remove(uuid);
+                applyNickname(uuid);
+                WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+            } catch (IllegalArgumentException e) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"UUID 无效\"}");
+            }
+            return;
+        }
+        WebServer.sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+    }
+
+    private void applyNickname(UUID uuid) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                plugin.getNicknameManager().apply(player);
+                plugin.getTabManager().update(player);
+            }
+        });
+    }
+
+    // ---------- Menus ----------
+    private void handleMenus(HttpExchange exchange, String[] parts, String method) throws IOException {
+        MenuManager manager = plugin.getMenuManager();
+
+        if (method.equals("GET")) {
+            if (parts.length >= 4) {
+                MenuManager.Menu menu = manager.get(parts[3]);
+                if (menu == null) {
+                    WebServer.sendJson(exchange, 404, "{\"error\":\"菜单不存在\"}");
+                    return;
+                }
+                WebServer.sendJson(exchange, 200, Json.stringify(menuToMap(menu)));
+                return;
+            }
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (MenuManager.Menu menu : manager.all().values()) list.add(menuToMap(menu));
+            WebServer.sendJson(exchange, 200, Json.stringify(Map.of("menus", list)));
+            return;
+        }
+
+        if (method.equals("POST") && parts.length == 3) {
+            Object parsed = Json.parse(WebServer.readBody(exchange));
+            if (!(parsed instanceof Map<?, ?> body)) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                return;
+            }
+            String id = strVal(body, "id");
+            int size = MenuManager.normalizeSize(Values.asInt(body.get("size"), 27));
+            MenuManager.Menu menu = manager.create(id, size);
+            if (menu == null) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"菜单已存在或 id 无效\"}");
+                return;
+            }
+            WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+            return;
+        }
+
+        if (method.equals("PUT") && parts.length >= 4) {
+            MenuManager.Menu menu = manager.get(parts[3]);
+            if (menu == null) {
+                WebServer.sendJson(exchange, 404, "{\"error\":\"菜单不存在\"}");
+                return;
+            }
+            Object parsed = Json.parse(WebServer.readBody(exchange));
+            if (!(parsed instanceof Map<?, ?> body)) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                return;
+            }
+            String title = strVal(body, "title");
+            if (title != null) menu.title = title;
+            menu.size = MenuManager.normalizeSize(Values.asInt(body.get("size"), menu.size));
+            if (body.get("items") instanceof List<?> items) {
+                List<MenuManager.MenuItem> parsedItems = new ArrayList<>();
+                for (Object raw : items) {
+                    if (raw instanceof Map<?, ?> map) parsedItems.add(parseMenuItem(map));
+                }
+                menu.items = parsedItems;
+            }
+            manager.put(menu);
+            WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+            return;
+        }
+
+        if (method.equals("DELETE") && parts.length >= 4) {
+            boolean ok = manager.delete(parts[3]);
+            WebServer.sendJson(exchange, ok ? 200 : 404, ok ? "{\"ok\":true}" : "{\"error\":\"菜单不存在\"}");
+            return;
+        }
+        WebServer.sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+    }
+
+    private Map<String, Object> menuToMap(MenuManager.Menu menu) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", menu.id);
+        m.put("title", menu.title);
+        m.put("size", menu.size);
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (MenuManager.MenuItem item : menu.items) {
+            Map<String, Object> raw = new LinkedHashMap<>();
+            raw.put("slot", item.slot);
+            raw.put("material", item.material);
+            raw.put("name", item.name);
+            raw.put("lore", item.lore);
+            raw.put("amount", item.amount);
+            raw.put("permission", item.permission);
+            raw.put("commands", item.commands);
+            raw.put("open", item.open);
+            raw.put("close", item.close);
+            items.add(raw);
+        }
+        m.put("items", items);
+        return m;
+    }
+
+    private MenuManager.MenuItem parseMenuItem(Map<?, ?> raw) {
+        MenuManager.MenuItem item = new MenuManager.MenuItem();
+        item.slot = Values.asInt(raw.get("slot"), 0);
+        item.material = raw.get("material") == null ? "STONE" : String.valueOf(raw.get("material"));
+        item.name = raw.get("name") == null ? "" : String.valueOf(raw.get("name"));
+        item.amount = Values.asInt(raw.get("amount"), 1);
+        item.permission = raw.get("permission") == null ? "" : String.valueOf(raw.get("permission"));
+        item.open = raw.get("open") == null ? "" : String.valueOf(raw.get("open"));
+        item.close = raw.get("close") != null && Boolean.parseBoolean(String.valueOf(raw.get("close")));
+        if (raw.get("lore") instanceof List<?> lore) {
+            for (Object o : lore) item.lore.add(String.valueOf(o));
+        }
+        if (raw.get("commands") instanceof List<?> commands) {
+            for (Object o : commands) item.commands.add(String.valueOf(o));
+        }
+        return item;
+    }
+
+    // ---------- NPCs ----------
+    private void handleNpcs(HttpExchange exchange, String[] parts, String method) throws IOException {
+        NpcManager manager = plugin.getNpcManager();
+
+        if (method.equals("GET")) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("npcs", manager.listForWeb());
+            result.put("citizens", manager.citizensInstalled());
+            WebServer.sendJson(exchange, 200, Json.stringify(result));
+            return;
+        }
+
+        try {
+            if (method.equals("POST") && parts.length == 3) {
+                Object parsed = Json.parse(WebServer.readBody(exchange));
+                if (!(parsed instanceof Map<?, ?> body)) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                    return;
+                }
+                String name = strVal(body, "name");
+                String type = strVal(body, "type");
+                World world = Bukkit.getWorld(strVal(body, "world") == null ? "" : strVal(body, "world"));
+                if (world == null) world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0);
+                if (world == null || name == null || name.isBlank()) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"参数无效\"}");
+                    return;
+                }
+                Location location = new Location(world,
+                        asDoubleVal(body.get("x"), world.getSpawnLocation().getX()),
+                        asDoubleVal(body.get("y"), world.getSpawnLocation().getY()),
+                        asDoubleVal(body.get("z"), world.getSpawnLocation().getZ()),
+                        (float) asDoubleVal(body.get("yaw"), 0),
+                        (float) asDoubleVal(body.get("pitch"), 0));
+                NpcManager.Npc npc = callSync(() -> manager.create(name, type, location));
+                if (npc == null) {
+                    WebServer.sendJson(exchange, 500, "{\"error\":\"创建失败\"}");
+                    return;
+                }
+                WebServer.sendJson(exchange, 200, Json.stringify(Map.of("ok", true, "id", npc.id)));
+                return;
+            }
+
+            if (method.equals("POST") && parts.length >= 4) {
+                NpcManager.Npc npc = manager.get(parts[3]);
+                if (npc == null) {
+                    WebServer.sendJson(exchange, 404, "{\"error\":\"NPC 不存在\"}");
+                    return;
+                }
+                Object parsed = Json.parse(WebServer.readBody(exchange));
+                if (!(parsed instanceof Map<?, ?> body)) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                    return;
+                }
+                String name = strVal(body, "name");
+                String actionType = strVal(body, "actionType");
+                String actionValue = strVal(body, "actionValue");
+                String skin = strVal(body, "skin");
+                if (name != null && !name.isBlank()) npc.name = name;
+                if (actionType != null) npc.actionType = actionType;
+                if (actionValue != null) npc.actionValue = actionValue;
+                if (skin != null) npc.skin = skin;
+                callSync(() -> {
+                    manager.spawn(npc);
+                    return true;
+                });
+                WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+                return;
+            }
+
+            if (method.equals("DELETE") && parts.length >= 4) {
+                boolean ok = callSync(() -> manager.remove(parts[3]));
+                WebServer.sendJson(exchange, ok ? 200 : 404, ok ? "{\"ok\":true}" : "{\"error\":\"NPC 不存在\"}");
+                return;
+            }
+        } catch (Exception e) {
+            WebServer.sendJson(exchange, 500, "{\"error\":\"" + e.getMessage() + "\"}");
+            return;
+        }
+        WebServer.sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+    }
+
+    // ---------- Command signs ----------
+    private void handleSigns(HttpExchange exchange, String[] parts, String method) throws IOException {
+        SignManager manager = plugin.getSignManager();
+
+        if (method.equals("GET")) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (SignManager.SignEntry e : manager.all()) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("world", e.world);
+                m.put("x", e.x);
+                m.put("y", e.y);
+                m.put("z", e.z);
+                m.put("command", e.command);
+                m.put("permission", e.permission);
+                m.put("creator", e.creator);
+                m.put("created", e.created);
+                list.add(m);
+            }
+            WebServer.sendJson(exchange, 200, Json.stringify(Map.of("signs", list)));
+            return;
+        }
+
+        if (method.equals("POST") && parts.length == 3) {
+            Object parsed = Json.parse(WebServer.readBody(exchange));
+            if (!(parsed instanceof Map<?, ?> body)) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"请求格式错误\"}");
+                return;
+            }
+            World world = Bukkit.getWorld(strVal(body, "world") == null ? "" : strVal(body, "world"));
+            if (world == null) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"世界不存在\"}");
+                return;
+            }
+            int x = Values.asInt(body.get("x"), 0);
+            int y = Values.asInt(body.get("y"), 0);
+            int z = Values.asInt(body.get("z"), 0);
+            String command = strVal(body, "command");
+            if (command == null || command.isBlank()) {
+                WebServer.sendJson(exchange, 400, "{\"error\":\"命令不能为空\"}");
+                return;
+            }
+            try {
+                boolean isSign = callSync(() -> world.getBlockAt(x, y, z).getState() instanceof Sign);
+                if (!isSign) {
+                    WebServer.sendJson(exchange, 400, "{\"error\":\"该坐标不是告示牌\"}");
+                    return;
+                }
+            } catch (Exception e) {
+                WebServer.sendJson(exchange, 500, "{\"error\":\"读取方块失败\"}");
+                return;
+            }
+            manager.add(new Location(world, x, y, z), command, strVal(body, "permission"), "web");
+            WebServer.sendJson(exchange, 200, "{\"ok\":true}");
+            return;
+        }
+
+        if (method.equals("DELETE") && parts.length >= 7) {
+            World world = Bukkit.getWorld(parts[3]);
+            if (world == null) {
+                WebServer.sendJson(exchange, 404, "{\"error\":\"世界不存在\"}");
+                return;
+            }
+            Location location = new Location(world,
+                    Values.asInt(parts[4], 0), Values.asInt(parts[5], 0), Values.asInt(parts[6], 0));
+            boolean ok = manager.remove(location);
+            WebServer.sendJson(exchange, ok ? 200 : 404, ok ? "{\"ok\":true}" : "{\"error\":\"不是命令告示牌\"}");
+            return;
+        }
+        WebServer.sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+    }
+
+    private String strVal(Map<?, ?> map, String key) {
+        Object value = map.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private long asLongVal(Object value, long def) {
+        if (value instanceof Number n) return n.longValue();
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private double asDoubleVal(Object value, double def) {
+        if (value instanceof Number n) return n.doubleValue();
+        try {
+            return Double.parseDouble(String.valueOf(value));
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private <T> T callSync(java.util.concurrent.Callable<T> task) throws Exception {
+        return Bukkit.getScheduler().callSyncMethod(plugin, task).get();
+    }
+
     private List<String> extractJsonStringArray(String body, String field) {
         List<String> out = new ArrayList<>();
         if (body == null) return out;

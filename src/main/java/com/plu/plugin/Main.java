@@ -3,8 +3,11 @@ package com.plu.plugin;
 import com.plu.plugin.commands.admin.*;
 import com.plu.plugin.commands.user.*;
 import com.plu.plugin.listeners.ClaimListener;
+import com.plu.plugin.listeners.CommandSignListener;
 import com.plu.plugin.listeners.LoginListener;
 import com.plu.plugin.listeners.MarketListener;
+import com.plu.plugin.listeners.MenuListener;
+import com.plu.plugin.listeners.NpcListener;
 import com.plu.plugin.listeners.PlayerListener;
 import com.plu.plugin.managers.*;
 import com.plu.plugin.storage.DatabaseManager;
@@ -38,6 +41,11 @@ public final class Main extends JavaPlugin {
     private AnnouncementManager announcementManager;
     private TabManager tabManager;
     private RedeemManager redeemManager;
+    private NicknameManager nicknameManager;
+    private MenuManager menuManager;
+    private NpcManager npcManager;
+    private SignManager signManager;
+    private RechargeManager rechargeManager;
     private DatabaseManager databaseManager;
     private WebServer webServer;
     private long enableTime;
@@ -75,6 +83,11 @@ public final class Main extends JavaPlugin {
         this.announcementManager = new AnnouncementManager(this);
         this.tabManager = new TabManager(this);
         this.redeemManager = new RedeemManager(this, databaseManager);
+        this.nicknameManager = new NicknameManager(this, databaseManager);
+        this.menuManager = new MenuManager(this);
+        this.npcManager = new NpcManager(this, databaseManager);
+        this.signManager = new SignManager(this, databaseManager);
+        this.rechargeManager = new RechargeManager(this, databaseManager);
 
         homeManager.load();
         kitManager.load();
@@ -93,6 +106,12 @@ public final class Main extends JavaPlugin {
         loginManager.load();
         announcementManager.load();
         redeemManager.load();
+        nicknameManager.load();
+        menuManager.load();
+        npcManager.load();
+        signManager.load();
+        rechargeManager.load();
+        npcManager.spawnAll();
         taskManager.start();
         tabManager.start();
 
@@ -107,6 +126,9 @@ public final class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new MarketListener(this), this);
         Bukkit.getPluginManager().registerEvents(new ClaimListener(this), this);
         Bukkit.getPluginManager().registerEvents(new LoginListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new MenuListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new NpcListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new CommandSignListener(this), this);
 
         // User commands
         registerUserCommands();
@@ -128,6 +150,10 @@ public final class Main extends JavaPlugin {
         if (spawnManager != null) spawnManager.save();
         if (economyManager != null) economyManager.flush();
         if (groupManager != null) groupManager.flush();
+        if (npcManager != null) npcManager.despawnAll();
+        if (nicknameManager != null) nicknameManager.save();
+        if (menuManager != null) menuManager.save();
+        if (signManager != null) signManager.save();
         if (databaseManager != null) databaseManager.disconnect();
         getLogger().info("PluEssentials disabled.");
     }
@@ -155,6 +181,9 @@ public final class Main extends JavaPlugin {
         getCommand("login").setExecutor(new LoginCommand(this));
         getCommand("register").setExecutor(new RegisterCommand(this));
         getCommand("redeem").setExecutor(new RedeemCommand(this));
+        getCommand("nick").setExecutor(new NickCommand(this));
+        getCommand("menu").setExecutor(new MenuCommand(this));
+        getCommand("charge").setExecutor(new ChargeCommand(this));
     }
 
     private void registerAdminCommands() {
@@ -186,6 +215,8 @@ public final class Main extends JavaPlugin {
         getCommand("healall").setExecutor(new HealallCommand(this));
         getCommand("feedall").setExecutor(new FeedallCommand(this));
         getCommand("group").setExecutor(new GroupCommand(this));
+        getCommand("npc").setExecutor(new NpcCommand(this));
+        getCommand("cmdsign").setExecutor(new CommandSignCommand(this));
     }
 
     public void reload() {
@@ -207,6 +238,13 @@ public final class Main extends JavaPlugin {
         loginManager.load();
         announcementManager.reload();
         redeemManager.load();
+        nicknameManager.load();
+        menuManager.load();
+        npcManager.despawnAll();
+        npcManager.load();
+        npcManager.spawnAll();
+        signManager.load();
+        rechargeManager.load();
         tabManager.start();
         if (webServer != null) webServer.reload();
     }
@@ -238,6 +276,11 @@ public final class Main extends JavaPlugin {
     public AnnouncementManager getAnnouncementManager() { return announcementManager; }
     public TabManager getTabManager() { return tabManager; }
     public RedeemManager getRedeemManager() { return redeemManager; }
+    public NicknameManager getNicknameManager() { return nicknameManager; }
+    public MenuManager getMenuManager() { return menuManager; }
+    public NpcManager getNpcManager() { return npcManager; }
+    public SignManager getSignManager() { return signManager; }
+    public RechargeManager getRechargeManager() { return rechargeManager; }
     public DatabaseManager getDatabaseManager() { return databaseManager; }
 
     public String getPrefix() {

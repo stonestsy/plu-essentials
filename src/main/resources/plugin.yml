@@ -2,6 +2,7 @@ name: PluEssentials
 version: ${project.version}
 main: com.plu.plugin.Main
 api-version: '1.21'
+softdepend: [Citizens]
 author: stonestsy
 authors: [stonestsy]
 description: Essentials plugin with built-in economy, groups, market, claims and web panel for MC 1.21.2
@@ -236,6 +237,37 @@ commands:
     aliases: [groups, rank]
     permission: plu.group
 
+  # ---- Nickname ----
+  nick:
+    description: Set your display nickname
+    usage: /nick [player] <nickname> | /nick reset [player]
+    permission: plu.nick
+
+  # ---- Custom menus ----
+  menu:
+    description: Open a custom menu
+    usage: /menu [id|list|reload|create <id> [size]|delete <id>]
+    permission: plu.menu
+
+  # ---- Recharge ----
+  charge:
+    description: Get a recharge bind code and public pay page URL
+    usage: /charge [list]
+    permission: plu.charge
+
+  # ---- NPC ----
+  npc:
+    description: Manage built-in / Citizens NPCs
+    usage: /npc <create|remove|list|tp|action|rename|skin> ...
+    permission: plu.npc.admin
+
+  # ---- Command signs ----
+  cmdsign:
+    description: Manage command signs
+    usage: /cmdsign <add|remove|perm|info|list> ...
+    aliases: [commandsign]
+    permission: plu.cmdsign.admin
+
 permissions:
   plu.home:
     description: Allow using /home
@@ -381,3 +413,33 @@ permissions:
   plu.group.admin:
     description: Allow creating and managing permission groups
     default: op
+  plu.nick:
+    description: Allow setting your own nickname
+    default: true
+  plu.nick.others:
+    description: Allow setting other players' nicknames
+    default: op
+  plu.nick.color:
+    description: Allow using color codes in nicknames
+    default: op
+  plu.menu:
+    description: Allow opening custom menus
+    default: true
+  plu.menu.admin:
+    description: Allow creating/deleting/reloading custom menus
+    default: op
+  plu.charge:
+    description: Allow using /charge
+    default: true
+  plu.pay.admin:
+    description: Allow managing recharge packages and orders
+    default: op
+  plu.npc.admin:
+    description: Allow managing NPCs
+    default: op
+  plu.cmdsign.admin:
+    description: Allow managing command signs
+    default: op
+  plu.cmdsign.use:
+    description: Generic permission for command signs
+    default: true

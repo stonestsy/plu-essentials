@@ -6,11 +6,11 @@
 
     <groupId>com.plu</groupId>
     <artifactId>plu-essentials</artifactId>
-    <version>2.1.0</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
 
     <name>PluEssentials</name>
-    <description>Bukkit essentials plugin with user, admin, economy, market, claims, login and web panel features (MC 1.21.2)</description>
+    <description>Bukkit essentials plugin with user, admin, economy, market, claims, login, recharge, menus, NPCs and web panel features (MC 1.21.2)</description>
 
     <developers>
         <developer>

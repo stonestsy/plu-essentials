@@ -3,19 +3,21 @@
 # PluEssentials
 
 **Minecraft 1.21.2 一体化服务端插件**
-玩家功能 · 管理工具 · 经济系统 · 玩家市场 · 领地保护 · 内嵌 Web 管理后台
+玩家功能 · 管理工具 · 经济系统 · 玩家市场 · 领地保护 · 充值 · 菜单 / NPC / 告示牌 · 内嵌 Web 管理后台
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.2-62B47A?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square)
-![Version](https://img.shields.io/badge/version-2.1.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.0.0-blue?style=flat-square)
 ![API](https://img.shields.io/badge/api--version-1.21-lightgrey?style=flat-square)
 ![Economy](https://img.shields.io/badge/economy-built--in-2ea44f?style=flat-square)
 ![Groups](https://img.shields.io/badge/groups-built--in-2ea44f?style=flat-square)
+![Recharge](https://img.shields.io/badge/recharge-WeChat%20JSAPI-07C160?style=flat-square)
+![Nickname](https://img.shields.io/badge/nickname-Chinese-ff69b4?style=flat-square)
 ![Deps](https://img.shields.io/badge/dependencies-none-brightgreen?style=flat-square)
 ![Build](https://img.shields.io/badge/build-Maven%20%7C%20Vite-success?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 
-[功能](#功能特性) · [安装](#快速开始) · [配置](#配置说明) · [经济系统](#经济系统) · [权限组](#权限组) · [命令](#命令) · [Web 后台](#web-管理后台) · [API](#rest-api) · [构建](#从源码构建)
+[功能](#功能特性) · [安装](#快速开始) · [配置](#配置说明) · [经济](#经济系统) · [权限组](#权限组) · [充值](#充值系统) · [昵称](#中文昵称与中文-id) · [命令](#命令) · [Web 后台](#web-管理后台) · [API](#rest-api) · [构建](#从源码构建)
 
 **作者 / 开发者 / 仓库维护者：[stonestsy](https://github.com/stonestsy)**
 
@@ -27,17 +29,19 @@
 
 PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令、管理员工具、安全管控、经济与交易、领地保护、登录系统、公告规则，以及一个**内嵌的 Web 管理后台**（JDK 自带 HttpServer，不需要额外部署 Nginx/Spring）。
 
+3.0.0 新增：**微信支付 JSAPI 充值**（未配置商户凭据时自动进入模拟支付）、**中文昵称与中文 ID 兼容**、**自定义菜单**、**NPC（内置 + Citizens）**、**命令告示牌**，并把所有命令的用法与权限节点补全到本文档。
+
 不引入重量级框架，Web 前端为 Vue 3 构建产物，直接打进 jar；数据层支持 **MySQL** 与 **YAML** 两种后端，按需切换。
 
 **经济与权限组均为内置实现**：余额、转账、财富排行、玩家市场（GUI 交易）、兑换码发币、后台余额调整形成闭环；权限组支持分组、前缀、权重、权限节点，并在登录时自动注入 Bukkit 权限体系。**无需安装 Vault、经济插件或 LuckPerms**，详见 [经济系统](#经济系统) 与 [权限组](#权限组)。
 
 | 项目 | 说明 |
 |------|------|
-| 版本 | 2.1.0 |
+| 版本 | 3.0.0 |
 | 服务端 | Bukkit / Spigot / Paper 1.21.2 |
 | Java | 21 |
-| 产物 | `PluEssentials-2.1.0.jar`（约 4.9 MB，内含 MySQL 驱动与前端资源） |
-| 外部依赖 | **无**（经济、权限组、Web 后台全部内置） |
+| 产物 | `PluEssentials-3.0.0.jar`（约 5.4 MB，内含 MySQL 驱动与前端资源） |
+| 外部依赖 | **无**（经济、权限组、Web 后台、充值、NPC 全部内置；Citizens 可选） |
 
 ---
 
@@ -60,6 +64,9 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 | 规则 | `/rules` | 以**成书界面**展示 |
 | 登录 | `/register` `/login` | 未登录禁止移动、交互、聊天 |
 | 兑换码 | `/redeem` | 兑换码换货币，限量 / 限时 / 一码一人一次 |
+| 中文昵称 | `/nick` | 中文显示名（聊天 / TAB），真实登录名不变 |
+| 充值 | `/charge` | 获取充值绑定码与微信 JSAPI 充值页 |
+| 自定义菜单 | `/menu` | YAML 配置的 GUI 菜单，点击执行命令 / 打开子菜单 |
 
 ### 管理员功能
 
@@ -73,6 +80,8 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 | 审计统计 | `/chatlog`（聊天记录）、`/seen`（首次登录 / 在线时长） |
 | 强制操作 | `/sudo` `/healall` `/feedall` |
 | 权限组 | `/group`（分组、前缀、权重、权限节点，替代 LuckPerms） |
+| NPC | `/npc`（内置实体 / Citizens 玩家皮肤 NPC，可执行命令或打开菜单） |
+| 命令告示牌 | `/cmdsign`（右键告示牌执行命令，可设权限节点） |
 | 消息维护 | `/broadcast` `/plureload` `/setwarp` `/delwarp` |
 
 ### Web 管理后台
@@ -84,6 +93,11 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 - **控制台** — 实时日志 + 执行任意命令
 - **插件与世界** — 启停重载插件；时间 / 天气 / 难度
 - **经济 · 玩家市场 · 权限组 · 领地 · 兑换码** — 全图形化管理
+- **充值管理** — 礼包增删改、订单列表、人工确认到账、模拟支付状态
+- **中文昵称** — 网页设置 / 清除玩家昵称
+- **自定义菜单** — 可视化编辑标题、行数、槽位、材料、描述、命令、子菜单
+- **NPC 管理** — 创建、编辑动作、删除、Citizens 状态提示
+- **命令告示牌** — 列表、添加、删除、权限节点
 - **公告与规则** — 网页编辑，游戏内书本渲染
 - **登录账号 · 封禁 · IP 封禁 · 白名单 · 聊天记录**
 - **Warp · 定时任务（Cron）· 服务器控制**（关服 / 重载 / 广播）
@@ -100,7 +114,7 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 ### 2. 安装
 
 ```text
-1. 下载 PluEssentials-2.1.0.jar
+1. 下载 PluEssentials-3.0.0.jar
 2. 放入服务端 plugins/ 目录
 3. 启动服务端，自动生成 plugins/PluEssentials/ 配置与数据文件
 4. 完成 —— 经济、权限组、Web 后台开箱即用，无需安装任何前置插件
@@ -216,6 +230,44 @@ tab:
 # ---------- 登录系统 ----------
 login:
   enabled: true
+
+# ---------- 中文昵称 ----------
+nickname:
+  enabled: true
+  max-length: 16           # 按字符数，中文算 1 个
+
+# ---------- 中文 ID 兼容 ----------
+compat:
+  # 原版客户端仍只允许英文名；开启后本插件不会主动拒绝非 ASCII 名字
+  allow-non-ascii-names: true
+
+# ---------- 自定义菜单 / NPC / 命令告示牌 ----------
+menus:
+  enabled: true
+npcs:
+  enabled: true
+  use-citizens: false      # 已装 Citizens 时是否全部交给 Citizens（player 类型始终尝试）
+cmdsigns:
+  enabled: true
+  write-label: true        # 创建时自动改写告示牌前三行
+
+# ---------- 充值（微信支付 APIv3 JSAPI 公众号支付） ----------
+wechatpay:
+  enabled: false           # 充值总开关
+  mock: true               # true = 模拟支付（无需商户凭据）
+  app-id: ""               # 公众号 AppID
+  app-secret: ""           # 公众号 AppSecret（OAuth 换 openid）
+  mch-id: ""               # 商户号
+  cert-serial-no: ""       # 商户 API 证书序列号
+  private-key-path: "apiclient_key.pem"  # 商户私钥（PKCS#8 PEM）
+  api-v3-key: ""           # 32 位 APIv3 密钥
+  notify-url: ""           # https://你的域名/api/pay/notify
+  public-base-url: ""      # https://你的域名，留空则用 127.0.0.1:端口
+  platform-cert-path: ""   # 微信支付平台证书，配置后校验回调签名
+  description: "Minecraft 服务器充值"
+recharge:
+  min-fen: 1               # 单笔最低金额（分）
+  max-fen: 1000000         # 单笔最高金额（分）
 ```
 
 ### 公告与规则
@@ -319,7 +371,7 @@ economy:
 
 ### 3. 玩家市场
 
-玩家之间自由交易的 GUI 商店，货币结算走 Vault。
+玩家之间自由交易的 GUI 商店，货币结算走内置经济。
 
 #### 使用流程
 
@@ -400,7 +452,7 @@ market:
 | 该兑换码已过期 | 已过到期时间 |
 | 该兑换码已被用完 | 达到总次数上限 |
 | 你已经兑换过这个码了 | 同一玩家重复兑换 |
-| 经济系统不可用 | 未检测到 Vault 经济服务 |
+| 经济系统不可用 | `economy.enabled` 为 `false` |
 
 **示例**
 
@@ -527,6 +579,427 @@ flowchart LR
 
 ---
 
+## 充值系统
+
+玩家充值 → 微信支付 → 自动发放游戏货币。默认使用**微信支付 APIv3 JSAPI（公众号支付）**；未配置商户凭据或 `wechatpay.mock: true` 时自动使用**模拟支付**，方便先跑通流程。
+
+### 充值流程
+
+1. 玩家在游戏内执行 `/charge`，获得 **6 位绑定码**（10 分钟有效）和充值页地址。
+2. 在微信中打开 `https://你的域名/pay`，输入绑定码。
+3. 首次进入会跳转微信网页授权（`snsapi_base`），服务器换取玩家 `openid`。
+4. 选择礼包 → 服务端按礼包价格创建 JSAPI 订单 → 微信收银台支付。
+5. 微信回调 `/api/pay/notify` → 验签、解密、幂等发货 → 玩家在线时收到到账提示。
+
+```text
+游戏内 /charge         微信打开 /pay           微信支付            回调发货
+   │                       │                      │                   │
+   ├─ 绑定码 + 网址 ──────▶ ├─ 输入绑定码 ────────▶ ├─ 收银台 ─────────▶ ├─ 解密/验签
+   │                       ├─ OAuth 获取 openid   │                   ├─ 订单置 PAID
+   │                       ├─ 选择礼包/下单       │                   └─ 增加余额
+```
+
+### 微信支付配置步骤
+
+#### 0. 前置条件
+
+| 项目 | 要求 |
+|------|------|
+| 公众号 | **已认证服务号**（订阅号不能开通 JSAPI 支付） |
+| 商户号 | 普通商户，已完成主体认证与结算账户 |
+| 域名 | 已 ICP 备案，可公网访问，并配置 HTTPS 证书 |
+| 服务器 | 有公网 IP，443 端口可访问 |
+| 插件 | Web 后台已启动（默认 `0.0.0.0:8080`） |
+
+#### 1. 公众号侧：获取 AppID / AppSecret
+
+1. 登录 [微信公众平台](https://mp.weixin.qq.com)。
+2. **设置与开发 → 基本配置**：
+   - 记录 **AppID**（形如 `wx1234567890abcdef`）。
+   - 生成 / 重置 **AppSecret**（只显示一次，立即保存）。
+3. 同一页面的 **IP 白名单**：把服务器公网 IP 加进去（OAuth 换取 openid 时需要）。
+
+#### 2. 公众号侧：配置网页授权域名
+
+1. **设置与开发 → 公众号设置 → 功能设置 → 网页授权域名**。
+2. 填写域名，**不要带 `https://`、端口和路径**：
+
+   ```text
+   mc.example.com
+   ```
+
+3. 下载 `MP_verify_xxxxxx.txt`，确保以下地址能访问到文件内容：
+
+   ```text
+   https://mc.example.com/MP_verify_xxxxxx.txt
+   ```
+
+4. 点击保存。
+
+提供验证文件有两种方式：
+
+- **Nginx**：单独 `location` 指向文件目录；
+- **插件外部目录**：把文件放进某个目录，配置 `web.external-web-dir` 指向该目录，由插件直接提供。
+
+#### 3. 商户平台：绑定 AppID、开通 JSAPI
+
+登录 [微信支付商户平台](https://pay.weixin.qq.com)。
+
+1. **产品中心 → AppID 账号管理 → 关联 AppID**：
+   - 填写第 1 步的公众号 AppID；
+   - 到公众号后台确认关联；
+   - 确认状态为**已生效**。
+2. **产品中心 → 我的产品 → JSAPI 支付**：确认已开通。
+3. **产品中心 → 开发配置 → JSAPI 支付授权目录**：
+   - 推荐填根目录：`https://mc.example.com/`
+   - 或填支付页目录：`https://mc.example.com/pay/`
+   - 必须是 HTTPS、不能带参数、最多 5 个，且与玩家实际打开的 URL 匹配。
+
+#### 4. 商户平台：mchid、APIv3 密钥、商户证书
+
+**商户号 mchid**：**账户中心 → 商户信息**，记录商户号（形如 `1900000000`）。
+
+**APIv3 密钥**：**账户中心 → API 安全 → APIv3 密钥 → 设置**：
+
+- 必须是 **32 位**字母 + 数字；
+- 设置后立即保存，插件里填 `api-v3-key`。
+
+**商户 API 证书**：**账户中心 → API 安全 → API 证书 → 申请证书**：
+
+1. 用「微信支付证书工具」生成证书请求；
+2. 下载得到 `apiclient_cert.pem`、`apiclient_key.pem`；
+3. 记录**证书序列号**（商户平台页面会显示，也可用命令读取）：
+
+   ```powershell
+   openssl x509 -in apiclient_cert.pem -noout -serial
+   ```
+
+   输出类似 `serial=3A7B9C...`，配置时**只填等号后的十六进制**，去掉 `serial=`。
+
+> 插件要求私钥为 **PKCS#8 PEM**（文件头 `-----BEGIN PRIVATE KEY-----`）。
+> 如果文件头是 `-----BEGIN RSA PRIVATE KEY-----`，先转换：
+>
+> ```powershell
+> openssl pkcs8 -topk8 -inform PEM -in apiclient_key.pem -outform PEM -nocrypt -out apiclient_key_pkcs8.pem
+> ```
+>
+> 然后把 `private-key-path` 指向转换后的文件。
+
+**平台证书 / 微信支付公钥（可选，用于回调验签）**：
+
+- 老商户：**账户中心 → API 安全 → 平台证书**，下载 `wechatpay_xxx.pem`，配置到 `platform-cert-path`。
+- 新商户如果只提供「微信支付公钥 + 公钥 ID」，当前版本暂不支持公钥验签，可以先把 `platform-cert-path` 留空：
+  - 回调仍会用 APIv3 密钥做 AES-GCM 解密；
+  - 但不会校验微信侧签名。
+
+#### 5. 放置凭据文件
+
+把文件放到：
+
+```text
+plugins/PluEssentials/apiclient_key.pem
+plugins/PluEssentials/wechatpay_platform.pem   # 可选
+```
+
+Linux 下收紧权限：
+
+```bash
+chmod 600 plugins/PluEssentials/apiclient_key.pem
+```
+
+不要提交到 Git，也不要放到 Web 可访问目录。
+
+#### 6. 修改 config.yml
+
+```yaml
+wechatpay:
+  enabled: true
+  mock: false
+  app-id: "wx1234567890abcdef"
+  app-secret: "公众号 AppSecret"
+  mch-id: "1900000000"
+  cert-serial-no: "3A7B9C..."            # 不带 serial=
+  private-key-path: "apiclient_key.pem"  # 相对插件数据目录
+  api-v3-key: "32位APIv3密钥"
+  notify-url: "https://mc.example.com/api/pay/notify"
+  public-base-url: "https://mc.example.com"
+  platform-cert-path: ""                 # 有平台证书就填 wechatpay_platform.pem
+  description: "Minecraft 服务器充值"
+```
+
+| 配置 | 要求 |
+|------|------|
+| `notify-url` | 公网 HTTPS、443、**不能带参数**，路径固定 `/api/pay/notify` |
+| `public-base-url` | 公网 HTTPS 根地址，**结尾不要带 `/`** |
+| `private-key-path` | 相对 `plugins/PluEssentials/`，也可写绝对路径 |
+| `cert-serial-no` | 商户 API 证书序列号，不是平台证书序列号 |
+| `api-v3-key` | 必须 32 位 |
+| `description` | 建议 127 字节以内 |
+
+> 第一次配置或更换证书后请**重启服务器**；`/plureload` 不会清除已缓存的私钥。
+> `public-base-url` 留空时会退化为 `http://127.0.0.1:<web.port>`，只能本机测试，微信客户端无法访问。
+
+#### 7. 配置 HTTPS 反向代理
+
+插件的 Web 服务是 HTTP，微信要求 HTTPS，建议用 Nginx 反向代理：
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name mc.example.com;
+
+    ssl_certificate     /etc/nginx/certs/mc.example.com.pem;
+    ssl_certificate_key /etc/nginx/certs/mc.example.com.key;
+
+    # 公众号网页授权域名验证文件
+    location = /MP_verify_xxxxxx.txt {
+        root /var/www/verify;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+```
+
+防火墙只开放 443，8080 不要对公网暴露。
+
+#### 8. 验证流程
+
+1. 重启服务器，控制台确认：
+   - `[PluEssentials] Web admin panel running at ...`
+   - 没有 `WeChat Pay: 私钥解析失败` 等警告。
+2. 在微信中打开 `https://mc.example.com/pay`，页面**不应**出现「模拟支付模式」标记。
+3. 游戏内执行 `/charge`，拿到 6 位绑定码。
+4. 在充值页输入绑定码 → 选择礼包 → 应跳转微信授权 → 拉起微信收银台。
+5. 支付成功后：
+   - 页面轮询显示「充值成功」；
+   - 控制台出现 `Recharge paid: ...`；
+   - 游戏内收到到账提示；
+   - 后台「充值管理」订单状态变为 `PAID`。
+
+快速检查回调地址是否可达：
+
+```powershell
+curl.exe -i https://mc.example.com/pay
+curl.exe -i -X POST https://mc.example.com/api/pay/notify
+```
+
+第二个请求返回 400 JSON 属正常（没有签名），说明地址可达。
+
+#### 9. 常见错误对照
+
+| 现象 | 原因 | 处理 |
+|------|------|------|
+| 充值页仍显示「模拟支付模式」 | `mock: true` 或凭据不完整 | 检查 `enabled`、`app-id`、`app-secret`、`mch-id`、`cert-serial-no`、`api-v3-key`（32 位）、`notify-url`、私钥能否解析 |
+| 日志 `私钥解析失败` | 私钥不是 PKCS#8 | 用 `openssl pkcs8` 转换后重新指向 |
+| 微信下单返回 401 / 签名错误 | 序列号或私钥不匹配 | `cert-serial-no` 必须是当前私钥对应的商户证书序列号 |
+| 网页授权 `redirect_uri 参数错误` | 网页授权域名未配置或不一致 | 公众号后台配置 `mc.example.com`，且 `public-base-url` 使用同一域名 |
+| `当前页面 URL 未注册` | JSAPI 支付授权目录不匹配 | 目录填 `https://mc.example.com/` 或 `https://mc.example.com/pay/` |
+| 微信内无法打开 `/pay` | 域名未备案 / HTTPS 不通 / 反代失败 | 先用手机浏览器和微信分别访问测试 |
+| 支付成功但不到账 | 回调未到达或验签失败 | 检查 `notify-url` 公网可达、HTTPS、443、无参数；后台订单若为 `PENDING` 可人工补单 |
+| 回调 400 `签名校验失败` | 平台证书填错 | 换成正确的平台证书，或暂时留空 |
+| 回调 400 金额不匹配 | 订单金额与实收不一致 | 检查礼包价格与订单，插件已按服务端礼包定价 |
+| OAuth 换取 openid 失败 | AppSecret 错误或 IP 未加白名单 | 重置 AppSecret，加入服务器公网 IP |
+
+#### 10. 上线前安全检查
+
+- `mock: false`，避免玩家自助「模拟支付」白拿货币。
+- 私钥、APIv3 密钥只放在服务器本地，权限 600。
+- 全站 HTTPS，8080 不对公网开放。
+- 配置平台证书，开启回调验签。
+- `notify-url` 使用固定域名，不要带参数。
+- 定期轮换 APIv3 密钥与商户证书。
+- 充值货币是否可退款由运营规则决定，插件不自动退款。
+
+### 充值礼包
+
+礼包保存在 `plugins/PluEssentials/pay-packages.yml`，也可在 Web 后台「充值管理」增删改：
+
+```yaml
+packages:
+  - id: p100
+    name: "100 金币"
+    price-fen: 100      # 单位：分，100 = 1.00 元
+    coins: 100          # 到账游戏货币
+    enabled: true
+```
+
+| 字段 | 说明 |
+|------|------|
+| `id` | 唯一 ID，英文数字 |
+| `name` | 展示名称 |
+| `price-fen` | 价格（分），受 `recharge.min-fen` / `max-fen` 限制 |
+| `coins` | 到账货币数量 |
+| `enabled` | 是否上架 |
+
+### 模拟支付
+
+`wechatpay.mock: true` 时不调用微信、不需要 OAuth：玩家输入绑定码 → 选择礼包 → 页面出现「确认支付（测试）」→ 点击即发货。用于验证订单、到账、后台记录。
+
+### 后台与接口
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/pay` | 充值状态、礼包、最近 200 条订单（管理员） |
+| POST / PUT | `/api/pay/packages`、`/api/pay/packages/{id}` | 新增 / 修改礼包 |
+| DELETE | `/api/pay/packages/{id}` | 删除礼包 |
+| POST | `/api/pay/orders/{no}/confirm` | 人工确认到账（补单） |
+| GET | `/api/pay/public/packages` | 公开礼包列表（无需 Token） |
+| POST | `/api/pay/public/create` | 创建订单（绑定码 + 礼包） |
+| GET | `/api/pay/public/status?order=` | 查询订单状态 |
+| POST | `/api/pay/public/mock-confirm` | 模拟支付确认（仅 mock 模式） |
+| POST | `/api/pay/notify` | 微信支付回调（无需 Token） |
+
+### 安全说明
+
+- 金额、货币数量全部以**服务端礼包配置**为准，客户端只能传礼包 ID。
+- 绑定码一次性使用，10 分钟过期；每次 `/charge` 会作废旧码。
+- 订单发货幂等：重复回调不会重复加币。
+- 回调金额会与订单金额比对，不一致拒绝发货并记录日志。
+- 生产环境务必启用 HTTPS，并配置 `platform-cert-path` 校验回调签名。
+
+---
+
+## 中文昵称与中文 ID
+
+### 中文昵称
+
+昵称只影响**显示层**（聊天、TAB、`{nick}` 占位符），真实登录名不变，原版客户端即可使用。
+
+| 命令 | 权限 | 说明 |
+|------|------|------|
+| `/nick <昵称>` | `plu.nick` | 设置自己的昵称 |
+| `/nick` | `plu.nick` | 查看当前昵称 |
+| `/nick reset` | `plu.nick` | 清除自己的昵称 |
+| `/nick <玩家> <昵称>` | `plu.nick.others` | 设置他人昵称 |
+| `/nick reset <玩家>` | `plu.nick.others` | 清除他人昵称 |
+
+- 昵称长度由 `nickname.max-length` 控制（默认 16 个字符，中文算 1 个）。
+- 带 `&` 颜色代码需要 `plu.nick.color`，否则会被自动移除。
+- 后台「中文昵称」页可搜索玩家名并设置 / 清除。
+- `tab.header` / `tab.footer` 支持 `{nick}` 占位符。
+
+### 真正的中文游戏名
+
+原版 Minecraft 客户端的用户名输入框只允许 `a-z 0-9 _`，**服务端插件无法单方面突破客户端限制**。要使用中文游戏 ID，需要满足以下任一条件：
+
+1. 使用支持中文用户名的改版客户端 / 启动器；或
+2. 通过支持中文 ID 的代理端接入（并关闭正版验证）。
+
+本插件能做的是**全链路 UTF-8 兼容**：
+
+- 数据库连接使用 `useUnicode=true&characterEncoding=UTF-8`，玩家名按 UTF-8 存储。
+- 命令参数、Web API、`/seen`、封禁、经济、领地等全部按字符串处理，不假设 ASCII。
+- `compat.allow-non-ascii-names: true` 时，登录阶段不会主动踢掉非 ASCII 名字。
+- 玩家名解析支持“先查本插件记录，再查在线/离线玩家”，中文名也能被 `/pay`、`/ban`、`/nick` 等命令识别。
+
+> 如果你只需要中文显示，**直接用 `/nick` 是最稳妥的方案**，不受客户端与服务端限制。
+
+---
+
+## 自定义菜单
+
+菜单保存在 `plugins/PluEssentials/menus.yml`，也可在 Web 后台「自定义菜单」可视化编辑。
+
+```yaml
+menus:
+  main:
+    title: "&8&l服务器菜单"
+    size: 27              # 9-54，必须是 9 的倍数
+    items:
+      - slot: 11
+        material: COMPASS
+        name: "&a传送"
+        lore:
+          - "&7点击打开传送菜单"
+        amount: 1
+        permission: ""
+        commands:
+          - "spawn"
+        open: ""          # 填写菜单 id 可打开子菜单
+        close: false
+      - slot: 15
+        material: BOOK
+        name: "&e服务器规则"
+        commands:
+          - "rules"
+```
+
+| 字段 | 说明 |
+|------|------|
+| `slot` | 槽位 0-53 |
+| `material` | Bukkit 材料名，如 `COMPASS`、`DIAMOND` |
+| `name` / `lore` | 显示名与描述，支持 `&` 颜色 |
+| `amount` | 物品数量 1-64 |
+| `permission` | 为空表示所有人可见 / 可点 |
+| `commands` | 点击执行，每行一条；`console:` 前缀以控制台执行 |
+| `open` | 点击后打开的菜单 id（可做多级菜单） |
+| `close` | 点击后是否关闭界面 |
+
+- 命令支持占位符 `{player}`、`{nick}`。
+- 玩家命令：`/menu [id]`（默认 `main`）、`/menu list`。
+- 管理员命令：`/menu reload`、`/menu create <id> [size]`、`/menu delete <id>`（权限 `plu.menu.admin`）。
+
+---
+
+## NPC 系统
+
+支持**内置实体 NPC**（零依赖）与 **Citizens 玩家皮肤 NPC**（可选）。
+
+| 类型 | 说明 |
+|------|------|
+| `villager` | 村民（默认，内置） |
+| `armor_stand` | 盔甲架（内置） |
+| `zombie` / `skeleton` / `blaze` | 其他内置生物 |
+| `player` | 玩家皮肤 NPC，需要安装 Citizens；未安装时回退为村民 |
+
+### 命令（`plu.npc.admin`）
+
+| 命令 | 说明 |
+|------|------|
+| `/npc create <名称> [类型]` | 在当前位置创建 NPC |
+| `/npc remove <id>` | 删除 NPC |
+| `/npc list` | 列出全部 NPC |
+| `/npc tp <id>` | 传送到 NPC |
+| `/npc action <id> <command\|console\|menu\|message> <内容>` | 设置右键动作 |
+| `/npc rename <id> <名称>` | 重命名并重生 |
+| `/npc skin <id> <正版玩家名>` | 设置皮肤（仅 Citizens） |
+
+### 动作
+
+- `command`：以玩家身份执行命令，支持 `{player}`、`{nick}`。
+- `console`：以控制台身份执行命令。
+- `menu`：打开自定义菜单，内容填菜单 id。
+- `message`：直接发送消息，支持 `&` 颜色。
+
+NPC 数据保存在 `plugins/PluEssentials/npcs.yml`（或 MySQL `plu_npcs`）；插件关闭时会移除实体，启动时按记录重新生成，避免重复。后台「NPC 管理」页可创建、改动作、删除，并显示 Citizens 是否已安装。
+
+---
+
+## 命令告示牌
+
+把右键告示牌变成命令按钮：`/cmdsign`（权限 `plu.cmdsign.admin`）。
+
+| 命令 | 说明 |
+|------|------|
+| `/cmdsign add <命令...>` | 看着告示牌（6 格内）创建 |
+| `/cmdsign remove` | 移除看着的命令告示牌 |
+| `/cmdsign perm <权限节点\|none>` | 设置 / 清除使用权限 |
+| `/cmdsign info` | 查看看着的告示牌配置 |
+| `/cmdsign list` | 列出全部命令告示牌 |
+
+- 命令支持 `{player}`、`{nick}` 占位符。
+- `console:` 前缀表示以控制台身份执行，例如 `/cmdsign add console:say 欢迎 {player}`。
+- `cmdsigns.write-label: true` 时，创建后会把告示牌前三行改写为 `[命令] /<命令> 右键执行`。
+- 未设置权限时所有人可用；设置后需要对应权限节点。
+- 数据保存在 `signs.yml`（或 MySQL `plu_signs`），后台「命令告示牌」页可查看 / 添加 / 删除。
+
+---
+
 ## 命令
 
 > 约定：`<参数>` 必填，`[参数]` 可选；消息支持 `&` 颜色代码。
@@ -563,6 +1036,9 @@ flowchart LR
 | `/register <密码>` | — | 注册（4-32 位，成功自动登录） |
 | `/login <密码>` | — | 登录 |
 | `/redeem <兑换码>` | `plu.redeem` | 兑换货币（别名 `/cdkey`） |
+| `/nick <昵称>` | `plu.nick` | 设置中文昵称；`/nick reset` 清除 |
+| `/charge` | `plu.charge` | 获取充值绑定码；`/charge list` 查看礼包 |
+| `/menu [id]` | `plu.menu` | 打开自定义菜单；`/menu list` 列出菜单 |
 
 </details>
 
@@ -601,6 +1077,16 @@ flowchart LR
 | `/group <list\|info\|create\|delete\|prefix\|weight\|perm\|add\|remove\|check>` | `/rank` | `plu.group` / `plu.group.admin` | 内置权限组管理 |
 | `/redeem create <兑换码\|#> <金额> [次数] [时长]` | — | `plu.redeem.admin` | 创建兑换码 |
 | `/redeem list` / `toggle` / `delete` | — | `plu.redeem.admin` | 兑换码管理 |
+| `/npc create <名称> [类型]` | — | `plu.npc.admin` | 在当前位置创建 NPC |
+| `/npc remove <id>` / `list` / `tp <id>` | — | `plu.npc.admin` | NPC 删除 / 列表 / 传送 |
+| `/npc action <id> <command\|console\|menu\|message> <内容>` | — | `plu.npc.admin` | 设置 NPC 点击动作 |
+| `/npc rename <id> <名称>` | — | `plu.npc.admin` | 重命名 |
+| `/npc skin <id> <玩家名>` | — | `plu.npc.admin` | 设置皮肤（Citizens） |
+| `/cmdsign add <命令...>` | `/commandsign` | `plu.cmdsign.admin` | 看着告示牌创建命令牌 |
+| `/cmdsign remove` / `info` / `list` | `/commandsign` | `plu.cmdsign.admin` | 命令告示牌管理 |
+| `/cmdsign perm <节点\|none>` | `/commandsign` | `plu.cmdsign.admin` | 设置告示牌使用权限 |
+| `/menu reload` / `create <id> [size]` / `delete <id>` | — | `plu.menu.admin` | 菜单维护 |
+| `/nick <玩家> <昵称>` / `nick reset <玩家>` | — | `plu.nick.others` | 管理他人昵称 |
 
 </details>
 
@@ -639,6 +1125,18 @@ flowchart LR
 # 审计
 /chatlog 30
 /seen Steve
+
+# 昵称与充值
+/nick 小明
+/nick reset
+/charge
+
+# 菜单 / NPC / 告示牌
+/menu main
+/npc create 商店老板 player
+/npc action 3f8a2c1d menu shop
+/cmdsign add console:say 欢迎 {player} 来到服务器
+/cmdsign perm plu.cmdsign.use
 ```
 
 ### 权限节点
@@ -671,6 +1169,16 @@ flowchart LR
 | `plu.chatlog` `plu.seen` | OP | 审计统计 |
 | `plu.sudo` `plu.healall` `plu.feedall` | OP | 强制与群体操作 |
 | `plu.broadcast` `plu.reload` | OP | 消息与维护 |
+| `plu.nick` | 所有人 | 设置自己的昵称 |
+| `plu.nick.others` | OP | 设置他人昵称 |
+| `plu.nick.color` | OP | 昵称使用颜色代码 |
+| `plu.menu` | 所有人 | 打开自定义菜单 |
+| `plu.menu.admin` | OP | 创建 / 删除 / 重载菜单 |
+| `plu.charge` | 所有人 | 获取充值绑定码 |
+| `plu.pay.admin` | OP | 充值礼包与订单管理（后台） |
+| `plu.npc.admin` | OP | NPC 创建 / 删除 / 动作 / 皮肤 |
+| `plu.cmdsign.admin` | OP | 命令告示牌管理 |
+| `plu.cmdsign.use` | 所有人 | 命令告示牌的通用权限示例 |
 
 </details>
 
@@ -687,7 +1195,7 @@ flowchart LR
 | Token 有效期 | `web.token-expiry` 分钟（默认 60） |
 | 前端来源 | jar 内 `web/` 资源；`web.external-web-dir` 可指向外部目录做热更新 |
 
-**页面清单**：仪表盘、玩家管理、控制台、插件管理、世界管理、经济系统、玩家市场、领地管理、兑换码、公告与规则、登录账号、封禁管理、IP 封禁、白名单、聊天记录、Warp 管理、定时任务、服务器控制。
+**页面清单**：仪表盘、玩家管理、控制台、插件管理、世界管理、经济系统、玩家市场、领地管理、兑换码、充值管理、中文昵称、自定义菜单、NPC 管理、命令告示牌、公告与规则、登录账号、封禁管理、IP 封禁、白名单、聊天记录、Warp 管理、定时任务、服务器控制。
 
 ---
 
@@ -733,9 +1241,9 @@ Authorization: Bearer <token>
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/economy/{player}` | 余额与货币名（需 Vault） |
+| GET | `/api/economy/{player}` | 余额与货币名（内置经济） |
 | POST | `/api/economy/{player}/{set\|add\|remove}` | `{"amount":100}` |
-| GET | `/api/permissions/{player}` | 主组与组列表（需 LuckPerms） |
+| GET | `/api/permissions/{player}` | 主组与组列表（内置权限组） |
 | GET | `/api/homes/{player}` | 家列表与上限 |
 | GET | `/api/market` | 上架列表 |
 | DELETE | `/api/market/{id}` | 删除上架 |
@@ -756,6 +1264,22 @@ Authorization: Bearer <token>
 | POST | `/api/redeem` | `{"code":"WELCOME","amount":500,"maxUses":50,"duration":"30d"}` |
 | POST | `/api/redeem/{code}/toggle` | 启用 / 停用 |
 | DELETE | `/api/redeem/{code}` | 删除 |
+
+</details>
+
+<details>
+<summary><b>充值 / 昵称 / 菜单 / NPC / 告示牌</b></summary>
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/pay` | 充值状态、礼包、最近订单 |
+| POST PUT DELETE | `/api/pay/packages`、`/api/pay/packages/{id}` | 礼包维护 |
+| POST | `/api/pay/orders/{no}/confirm` | 人工确认到账 |
+| GET POST | `/api/nicknames` | 昵称列表 / 设置 `{"name":"玩家名","nick":"昵称"}` |
+| DELETE | `/api/nicknames/{uuid}` | 清除昵称 |
+| GET POST PUT DELETE | `/api/menus`、`/api/menus/{id}` | 菜单维护（含 items 数组） |
+| GET POST DELETE | `/api/npcs`、`/api/npcs/{id}` | NPC 列表 / 创建 / 更新 / 删除 |
+| GET POST DELETE | `/api/signs`、`/api/signs/{world}/{x}/{y}/{z}` | 命令告示牌维护 |
 
 </details>
 
@@ -810,6 +1334,10 @@ Authorization: Bearer <token>
 | `plu_balances` | uuid, name, balance, updated | 内置经济余额 |
 | `plu_groups` | name, prefix, weight, permissions | 权限组定义（权限为逗号分隔） |
 | `plu_player_groups` | uuid, group_name | 玩家与分组的关联 |
+| `plu_pay_orders` | no, uuid, player, package_id, amount_fen, coins, status, created, paid_at, openid, prepay_id, transaction_id | 充值订单 |
+| `plu_nicknames` | uuid, name, nick, updated | 中文昵称 |
+| `plu_npcs` | id, name, type, world, x, y, z, yaw, pitch, action_type, action_value, skin, citizens, citizens_id, entity_uuid | NPC |
+| `plu_signs` | world, x, y, z, command, permission, creator, created | 命令告示牌 |
 
 </details>
 
@@ -840,10 +1368,10 @@ cd ..
 mvn clean package
 ```
 
-产物：`target/PluEssentials-2.1.0.jar`
+产物：`target/PluEssentials-3.0.0.jar`
 
 > 后端编译启用了 `-Xlint:all,-classfile`，构建输出 0 警告。
-> MySQL 驱动与 Vue 资源由 `maven-shade-plugin` 打入 jar，最终约 4.9 MB。
+> MySQL 驱动与 Vue 资源由 `maven-shade-plugin` 打入 jar，最终约 5.4 MB。
 
 ## 项目结构
 
@@ -859,12 +1387,14 @@ plu/
 │   │   ├── gui/                # 市场 GUI、书本界面
 │   │   ├── listeners/          # 登录检查、聊天审计、领地保护、市场交互
 │   │   ├── managers/           # 各业务管理器（MySQL / YAML 双后端）
+│   │   ├── pay/                # 微信支付 APIv3 客户端（JSAPI / 回调验签解密）
 │   │   ├── storage/            # DatabaseManager：连接与自动建表
 │   │   ├── util/               # 玩家解析、数值转换工具
-│   │   └── web/                # HttpServer、路由、鉴权、软依赖适配
+│   │   └── web/                # HttpServer、路由、鉴权、公开充值页与回调
 │   └── resources/
 │       ├── plugin.yml          # 命令与权限声明
 │       ├── config.yml          # 默认配置
+│       ├── pay/index.html      # 玩家充值页（无需构建）
 │       └── web/                # 前端构建产物（打入 jar）
 └── web-frontend/               # Vue 3 + Vite + Element Plus 源码
 ```
@@ -873,8 +1403,9 @@ plu/
 
 - **无外部 Web 框架**：仅用 JDK 内置 HttpServer，单 jar 交付；请求线程中修改 Bukkit 状态的操作通过 `Bukkit.getScheduler().runTask` 回到主线程。
 - **双存储后端**：管理器统一构造签名 `XxxManager(Main plugin, DatabaseManager db)`，内部按 `db.isEnabled()` 分流。
-- **软依赖懒检测**：Vault 经济服务在插件加载后再注册也能自动恢复；LuckPerms 走反射，不产生编译期硬依赖。
+- **无硬依赖**：Citizens 仅在存在时通过反射创建玩家皮肤 NPC；未安装则回退内置实体。微信支付仅使用 JDK 自带 `HttpClient` 与 JCA。
 - **前端可热更新**：`web.external-web-dir` 指向外部目录即可绕过 jar 内资源。
+- **公开支付与后台隔离**：`/pay`、`/api/pay/public/*`、`/api/pay/notify` 在鉴权路由之前处理，管理员 Token 不参与支付回调。
 
 ---
 
@@ -901,7 +1432,7 @@ plu/
 <details>
 <summary><b>市场成交后卖家没收到钱</b></summary>
 
-款项直接写入经济插件（卖家离线也会入账），先确认经济插件本身的余额是否正确。若开启了 `market.tax-percent`，卖家实际到账为「价格 − 税额」，税额部分直接销毁不上缴，可用于回收货币。
+款项直接写入内置经济（卖家离线也会入账），先确认「经济系统」页余额是否正确。若开启了 `market.tax-percent`，卖家实际到账为「价格 − 税额」，税额部分直接销毁不上缴，可用于回收货币。
 </details>
 
 <details>
@@ -932,6 +1463,48 @@ plu/
 <summary><b>玩家登录后仍被限制移动</b></summary>
 
 确认已执行 `/register` 或 `/login`；`login.enabled: false` 可整体关闭登录要求，`plu.login.bypass` 权限可跳过。
+</details>
+
+<details>
+<summary><b>充值页一直显示「模拟支付模式」</b></summary>
+
+说明 `wechatpay.mock: true`，或商户凭据不完整（`isConfigured()` 返回 false）。检查 `enabled`、`app-id`、`mch-id`、`cert-serial-no`、`api-v3-key`（必须 32 位）、`notify-url`、`private-key-path` 是否齐全，且私钥为 PKCS#8 PEM。改完执行 `/plureload`。
+</details>
+
+<details>
+<summary><b>微信支付调起失败 / 充值页无法访问</b></summary>
+
+JSAPI 支付只能在微信内打开。确认 `public-base-url` 是可公网访问的 HTTPS 域名，且该域名已配置为公众号网页授权域名与 JSAPI 支付授权目录；`notify-url` 必须能被微信回调到。
+</details>
+
+<details>
+<summary><b>玩家支付成功但没到账</b></summary>
+
+先看后台「充值管理」订单状态：`PENDING` 可在确认收款后点「确认到账」补单。若订单一直是 `PENDING`，检查微信回调是否到达（`notify-url`、HTTPS、防火墙），以及日志中的验签 / 金额不匹配提示。
+</details>
+
+<details>
+<summary><b>设置中文游戏名后无法进入服务器</b></summary>
+
+原版客户端用户名只允许 `a-z0-9_`。插件无法绕过客户端限制，只能用改版客户端或支持中文 ID 的代理；若只是想要中文显示，请使用 `/nick`（[中文昵称与中文 ID](#中文昵称与中文-id)）。
+</details>
+
+<details>
+<summary><b>昵称设置成功但聊天里没变化</b></summary>
+
+本插件会设置 `displayName` 与 TAB 名称；若有其他聊天格式插件接管了 `AsyncPlayerChatEvent` 并固定使用真实名，需要在其格式里改用显示名或 `{nick}`。TAB 每 5 秒刷新一次。
+</details>
+
+<details>
+<summary><b>NPC 没有玩家皮肤 / 无法创建 player 类型</b></summary>
+
+玩家皮肤 NPC 需要安装 Citizens（`player` 类型会在 Citizens 存在时自动使用）。未安装时会回退成村民，并在控制台给出提示。
+</details>
+
+<details>
+<summary><b>命令告示牌右键没反应</b></summary>
+
+确认告示牌已用 `/cmdsign add` 创建（后台列表能看到）；若设置了权限节点，玩家需要拥有该节点；`/cmdsign remove` 与 `perm` 都需要先看着目标告示牌。
 </details>
 
 <details>

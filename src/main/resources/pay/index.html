@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>服务器充值</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #0f1419; color: #e6edf3; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 22px 16px 40px; }
+  h1 { font-size: 20px; margin: 8px 0 4px; background: linear-gradient(90deg,#58a6ff,#bc8cff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: #8b98a9; font-size: 13px; margin-bottom: 20px; }
+  .card { background: #161b22; border: 1px solid #2a3344; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; color: #8b98a9; margin-bottom: 8px; }
+  input { width: 100%; height: 46px; border-radius: 10px; border: 1px solid #303a4d; background: #0d1117; color: #e6edf3; padding: 0 14px; font-size: 18px; letter-spacing: 4px; text-transform: uppercase; outline: none; }
+  input:focus { border-color: #58a6ff; }
+  button { width: 100%; height: 46px; margin-top: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; color: #fff; background: linear-gradient(90deg,#1f6feb,#58a6ff); cursor: pointer; }
+  button:disabled { opacity: .45; }
+  .pkg { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px; border-bottom: 1px solid #222b3a; }
+  .pkg:last-child { border-bottom: none; }
+  .pkg .name { font-size: 15px; }
+  .pkg .coins { color: #8b98a9; font-size: 12px; margin-top: 3px; }
+  .pkg .price { color: #f0b429; font-weight: 700; font-size: 16px; margin-right: 12px; }
+  .buy { width: auto; height: 34px; padding: 0 16px; margin: 0; font-size: 13px; border-radius: 8px; }
+  .tips { color: #6e7b8d; font-size: 12px; line-height: 1.7; margin-top: 10px; }
+  .err { color: #ff7b72; font-size: 13px; margin-top: 10px; }
+  .ok { color: #3fb950; font-size: 14px; margin-top: 10px; }
+  .mask { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 9; }
+  .mask.show { display: flex; }
+  .dialog { width: 100%; max-width: 360px; background: #161b22; border: 1px solid #2a3344; border-radius: 16px; padding: 20px; text-align: center; }
+  .dialog h3 { margin: 0 0 8px; font-size: 17px; }
+  .dialog p { color: #8b98a9; font-size: 13px; line-height: 1.6; }
+  .badge { display: inline-block; font-size: 11px; color: #d29922; border: 1px solid #4a3b16; background: #2a2110; padding: 3px 8px; border-radius: 20px; margin-bottom: 12px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>服务器充值</h1>
+  <div class="sub" id="sub">在游戏内输入 /charge 获取绑定码</div>
+
+  <div class="card" id="bindCard">
+    <label>充值绑定码</label>
+    <input id="bindInput" maxlength="6" placeholder="6 位绑定码" autocomplete="off">
+    <button id="bindBtn">下一步</button>
+    <div class="tips">绑定码 10 分钟内有效；每次 /charge 会刷新。</div>
+    <div class="err" id="bindErr"></div>
+  </div>
+
+  <div class="card hidden" id="pkgCard">
+    <div id="mockBadge" class="badge hidden">模拟支付模式（未配置微信商户凭据）</div>
+    <div id="pkgList"></div>
+    <button id="oauthBtn" class="hidden">微信授权后继续</button>
+    <div class="tips" id="payTips">
+      支付成功后金币自动到账；如未到账请稍等或联系管理员。
+    </div>
+    <div class="err" id="payErr"></div>
+    <div class="ok" id="payOk"></div>
+  </div>
+
+  <div class="tips">
+    仅支持微信内打开。充值前请确认游戏内 /charge 绑定码未过期。<br>
+    充值即代表同意服务器充值规则，充值货币不支持退款。
+  </div>
+</div>
+
+<div class="mask" id="mask">
+  <div class="dialog">
+    <h3>模拟支付</h3>
+    <p id="mockText"></p>
+    <button id="mockConfirm">确认支付（测试）</button>
+    <button id="mockCancel" style="background:#30363d">取消</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var bind = (params.get('bind') || '').toUpperCase();
+  var session = params.get('session') || '';
+  var error = params.get('error') || '';
+  var mock = true;
+  var currentPackage = null;
+  var pollTimer = null;
+
+  var el = function (id) { return document.getElementById(id); };
+  var bindCard = el('bindCard'), pkgCard = el('pkgCard'), pkgList = el('pkgList');
+  var bindInput = el('bindInput'), bindErr = el('bindErr'), payErr = el('payErr'), payOk = el('payOk');
+  var oauthBtn = el('oauthBtn'), mockBadge = el('mockBadge'), mask = el('mask');
+  var mockText = el('mockText'), mockConfirm = el('mockConfirm'), mockCancel = el('mockCancel');
+
+  if (error === 'bind') showBind('绑定码无效或已过期，请回到游戏重新 /charge。');
+  if (error === 'oauth') showBind('微信授权失败，请重试。');
+  if (bind) bindInput.value = bind;
+
+  fetch('/api/pay/public/packages').then(function (r) { return r.json(); }).then(function (data) {
+    if (!data.enabled) {
+      el('sub').textContent = '充值系统当前未开启';
+      return;
+    }
+    mock = !!data.mock;
+    if (mock) mockBadge.classList.remove('hidden');
+    renderPackages(data.packages || []);
+    if (bind) {
+      bindCard.classList.add('hidden');
+      pkgCard.classList.remove('hidden');
+      updateOauthBtn();
+    }
+  }).catch(function () {
+    el('sub').textContent = '无法连接服务器';
+  });
+
+  el('bindBtn').onclick = function () {
+    var code = (bindInput.value || '').trim().toUpperCase();
+    if (code.length !== 6) { showBind('请输入 6 位绑定码'); return; }
+    if (mock) {
+      bind = code;
+      bindCard.classList.add('hidden');
+      pkgCard.classList.remove('hidden');
+      return;
+    }
+    location.href = '/pay/oauth?bind=' + encodeURIComponent(code);
+  };
+
+  oauthBtn.onclick = function () {
+    location.href = '/pay/oauth?bind=' + encodeURIComponent(bind);
+  };
+
+  function updateOauthBtn() {
+    if (mock) { oauthBtn.classList.add('hidden'); return; }
+    if (!session) {
+      oauthBtn.classList.remove('hidden');
+      el('payTips').textContent = '需要先完成微信授权，才能发起支付。';
+    } else {
+      oauthBtn.classList.add('hidden');
+      el('payTips').textContent = '支付成功后金币自动到账。';
+    }
+  }
+
+  function renderPackages(list) {
+    if (!list.length) { pkgList.innerHTML = '<div class="tips">暂无可购买的礼包。</div>'; return; }
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      html += '<div class="pkg"><div><div class="name">' + esc(p.name) + '</div>'
+        + '<div class="coins">' + p.coins + ' 游戏货币</div></div>'
+        + '<div style="display:flex;align-items:center">'
+        + '<div class="price">' + p.price.toFixed(2) + ' 元</div>'
+        + '<button class="buy" data-id="' + esc(p.id) + '">购买</button></div></div>';
+    }
+    pkgList.innerHTML = html;
+    var buttons = pkgList.querySelectorAll('.buy');
+    for (var j = 0; j < buttons.length; j++) {
+      buttons[j].onclick = function () {
+        var id = this.getAttribute('data-id');
+        currentPackage = findPackage(list, id);
+        buy(id);
+      };
+    }
+  }
+
+  function findPackage(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
+  function buy(packageId) {
+    payErr.textContent = '';
+    payOk.textContent = '';
+    if (!bind) { showBind('请先填写绑定码'); return; }
+    if (!mock && !session) {
+      location.href = '/pay/oauth?bind=' + encodeURIComponent(bind);
+      return;
+    }
+    fetch('/api/pay/public/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bind: bind, packageId: packageId, session: session })
+    }).then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+      .then(function (res) {
+        if (res.status !== 200) { payErr.textContent = res.data.error || '下单失败'; return; }
+        var data = res.data;
+        if (data.mock) {
+          showMock(data);
+        } else {
+          invokePay(data);
+        }
+      }).catch(function () { payErr.textContent = '网络错误，请重试'; });
+  }
+
+  function showMock(data) {
+    mockText.textContent = '订单 ' + data.orderNo + '，金额 ' + data.amount.toFixed(2)
+      + ' 元，到账 ' + data.coins + ' 游戏货币。';
+    mask.classList.add('show');
+    mockConfirm.onclick = function () {
+      mockConfirm.disabled = true;
+      fetch('/api/pay/public/mock-confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: data.orderNo })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        mockConfirm.disabled = false;
+        mask.classList.remove('show');
+        if (d.ok) { payOk.textContent = '充值成功，' + data.coins + ' 游戏货币已到账。'; }
+        else { payErr.textContent = d.error || '发货失败'; }
+      });
+    };
+    mockCancel.onclick = function () { mask.classList.remove('show'); };
+  }
+
+  function invokePay(data) {
+    if (typeof WeixinJSBridge === 'undefined') {
+      payErr.textContent = '请在微信中打开本页面完成支付。';
+      return;
+    }
+    WeixinJSBridge.invoke('getBrandWCPayRequest', data.payParams, function (res) {
+      if (res.err_msg === 'get_brand_wcpay_request:ok') {
+        pollStatus(data.orderNo);
+      } else if (res.err_msg === 'get_brand_wcpay_request:cancel') {
+        payErr.textContent = '已取消支付。';
+      } else {
+        payErr.textContent = '支付失败：' + res.err_msg;
+      }
+    });
+  }
+
+  function pollStatus(orderNo) {
+    payOk.textContent = '支付已提交，正在确认到账...';
+    var tries = 0;
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(function () {
+      tries++;
+      fetch('/api/pay/public/status?order=' + encodeURIComponent(orderNo))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.paid) {
+            clearInterval(pollTimer);
+            payOk.textContent = '充值成功，' + d.coins + ' 游戏货币已到账。';
+          } else if (tries > 40) {
+            clearInterval(pollTimer);
+            payErr.textContent = '暂未确认到账，请稍后刷新或联系管理员。';
+          }
+        }).catch(function () {});
+    }, 1500);
+  }
+
+  function showBind(msg) { bindCard.classList.remove('hidden'); bindErr.textContent = msg; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+})();
+</script>
+</body>
+</html>

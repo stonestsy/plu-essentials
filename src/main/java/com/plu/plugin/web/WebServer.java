@@ -27,6 +27,7 @@ public class WebServer {
     private HttpServer server;
     private final ConsoleBuffer consoleBuffer;
     private final TpsTracker tpsTracker;
+    private final PayPublicHandler payHandler;
 
     public WebServer(Main plugin) {
         this.plugin = plugin;
@@ -34,6 +35,7 @@ public class WebServer {
         this.consoleBuffer = new ConsoleBuffer(plugin);
         this.tpsTracker = new TpsTracker(plugin);
         this.router = new ApiRouter(plugin, auth, consoleBuffer, tpsTracker);
+        this.payHandler = new PayPublicHandler(plugin);
     }
 
     public void start() {
@@ -75,7 +77,11 @@ public class WebServer {
         public void handle(HttpExchange exchange) throws IOException {
             String path = exchange.getRequestURI().getPath();
             try {
-                if (path.startsWith("/api/")) {
+                if (payHandler.isApiPath(path)) {
+                    payHandler.handleApi(exchange);
+                } else if (payHandler.isPagePath(path)) {
+                    payHandler.handlePage(exchange, path);
+                } else if (path.startsWith("/api/")) {
                     router.handle(exchange);
                 } else {
                     serveFrontend(exchange, path);

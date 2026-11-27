@@ -45,6 +45,10 @@ public class TabManager {
     private String apply(String text, Player player) {
         String result = text;
         result = result.replace("{player}", player.getName());
+        if (result.contains("{nick}")) {
+            String nick = plugin.getNicknameManager().display(player.getUniqueId());
+            result = result.replace("{nick}", nick.isEmpty() ? player.getName() : nick);
+        }
         result = result.replace("{online}", String.valueOf(Bukkit.getOnlinePlayers().size()));
         result = result.replace("{max}", String.valueOf(Bukkit.getMaxPlayers()));
         result = result.replace("{world}", player.getWorld().getName());

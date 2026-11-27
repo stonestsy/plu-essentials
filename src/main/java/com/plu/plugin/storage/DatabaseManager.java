@@ -169,6 +169,44 @@ public class DatabaseManager {
                     + "uuid VARCHAR(36), "
                     + "group_name VARCHAR(64), "
                     + "PRIMARY KEY (uuid, group_name))");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "pay_orders ("
+                    + "no VARCHAR(40) PRIMARY KEY, "
+                    + "uuid VARCHAR(36), "
+                    + "player VARCHAR(64), "
+                    + "package_id VARCHAR(32), "
+                    + "amount_fen BIGINT, "
+                    + "coins DOUBLE, "
+                    + "status VARCHAR(16), "
+                    + "created BIGINT, "
+                    + "paid_at BIGINT, "
+                    + "openid VARCHAR(64), "
+                    + "prepay_id VARCHAR(128), "
+                    + "transaction_id VARCHAR(64))");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "nicknames ("
+                    + "uuid VARCHAR(36) PRIMARY KEY, "
+                    + "name VARCHAR(64), "
+                    + "nick VARCHAR(64), "
+                    + "updated BIGINT)");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "npcs ("
+                    + "id VARCHAR(16) PRIMARY KEY, "
+                    + "name VARCHAR(64), "
+                    + "type VARCHAR(32), "
+                    + "world VARCHAR(64), "
+                    + "x DOUBLE, y DOUBLE, z DOUBLE, yaw FLOAT, pitch FLOAT, "
+                    + "action_type VARCHAR(16), "
+                    + "action_value VARCHAR(255), "
+                    + "skin VARCHAR(64), "
+                    + "citizens TINYINT(1), "
+                    + "citizens_id INT, "
+                    + "entity_uuid VARCHAR(36))");
+            st.executeUpdate("CREATE TABLE IF NOT EXISTS " + prefix + "signs ("
+                    + "world VARCHAR(64), "
+                    + "x INT, y INT, z INT, "
+                    + "command VARCHAR(255), "
+                    + "permission VARCHAR(64), "
+                    + "creator VARCHAR(64), "
+                    + "created BIGINT, "
+                    + "PRIMARY KEY (world, x, y, z))");
         }
     }
 
