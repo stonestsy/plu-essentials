@@ -24,8 +24,8 @@ public class HealCommand implements CommandExecutor {
             Msg.send(sender, plugin.getPrefix() + "&cPlayer not found or console must specify a player.");
             return true;
         }
-        double max = target.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null
-                ? target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() : 20.0;
+        double max = target.getAttribute(Attribute.MAX_HEALTH) != null
+                ? target.getAttribute(Attribute.MAX_HEALTH).getValue() : 20.0;
         target.setHealth(max);
         target.setFoodLevel(20);
         target.setSaturation(20);

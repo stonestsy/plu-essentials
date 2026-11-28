@@ -243,7 +243,7 @@ public class ApiRouter {
             try {
                 switch (action) {
                     case "kick" -> { target.kickPlayer(ChatColor.RED + "Kicked by admin."); success[0] = true; }
-                    case "heal" -> { target.setHealth(target.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue()); target.setFoodLevel(20); success[0] = true; }
+                    case "heal" -> { target.setHealth(target.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()); target.setFoodLevel(20); success[0] = true; }
                     case "feed" -> { target.setFoodLevel(20); target.setSaturation(20); success[0] = true; }
                     case "kill" -> { target.setHealth(0); success[0] = true; }
                     case "god" -> { plugin.getGodManager().toggle(target.getUniqueId()); success[0] = true; }

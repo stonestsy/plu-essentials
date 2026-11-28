@@ -17,8 +17,8 @@ public class HealallCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         int count = 0;
         for (Player p : Bukkit.getOnlinePlayers()) {
-            double max = p.getAttribute(Attribute.GENERIC_MAX_HEALTH) != null
-                    ? p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() : 20.0;
+            double max = p.getAttribute(Attribute.MAX_HEALTH) != null
+                    ? p.getAttribute(Attribute.MAX_HEALTH).getValue() : 20.0;
             p.setHealth(max);
             p.setFoodLevel(20);
             p.setSaturation(20);

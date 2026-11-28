@@ -2,12 +2,12 @@
 
 # PluEssentials
 
-**Minecraft 1.21.2 一体化服务端插件**
+**Minecraft 26.1 一体化服务端插件**
 玩家功能 · 管理工具 · 经济系统 · 玩家市场 · 领地保护 · 充值 · 菜单 / NPC / 告示牌 · 内嵌 Web 管理后台
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.21.2-62B47A?style=flat-square)
+![Minecraft](https://img.shields.io/badge/Minecraft-26.1%20%7C%201.21.3%2B-62B47A?style=flat-square)
 ![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square)
-![Version](https://img.shields.io/badge/version-3.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.1.0-blue?style=flat-square)
 ![API](https://img.shields.io/badge/api--version-1.21-lightgrey?style=flat-square)
 ![Economy](https://img.shields.io/badge/economy-built--in-2ea44f?style=flat-square)
 ![Groups](https://img.shields.io/badge/groups-built--in-2ea44f?style=flat-square)
@@ -29,6 +29,8 @@
 
 PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令、管理员工具、安全管控、经济与交易、领地保护、登录系统、公告规则，以及一个**内嵌的 Web 管理后台**（JDK 自带 HttpServer，不需要额外部署 Nginx/Spring）。
 
+3.1.0 起支持 **Minecraft 26.1**：编译目标为 `spigot-api 26.1.2`，`plugin.yml` 的 `api-version` 保持 `1.21`，因此同一份 jar 既能跑 **26.1.x**，也兼容 **1.21.3+**（已在 Paper 26.1.2 与 Paper 1.21.3 实测通过）。由于使用了 1.21.3 才引入的 `Attribute.MAX_HEALTH`，**1.21.2 及更早版本请继续使用 3.0.0**。
+
 3.0.0 新增：**微信支付 JSAPI 充值**（未配置商户凭据时自动进入模拟支付）、**中文昵称与中文 ID 兼容**、**自定义菜单**、**NPC（内置 + Citizens）**、**命令告示牌**，并把所有命令的用法与权限节点补全到本文档。
 
 不引入重量级框架，Web 前端为 Vue 3 构建产物，直接打进 jar；数据层支持 **MySQL** 与 **YAML** 两种后端，按需切换。
@@ -37,10 +39,10 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 
 | 项目 | 说明 |
 |------|------|
-| 版本 | 3.0.0 |
-| 服务端 | Bukkit / Spigot / Paper 1.21.2 |
-| Java | 21 |
-| 产物 | `PluEssentials-3.0.0.jar`（约 5.4 MB，内含 MySQL 驱动与前端资源） |
+| 版本 | 3.1.0 |
+| 服务端 | Bukkit / Spigot / Paper **26.1.x**，兼容 **1.21.3+** |
+| Java | 21+（MC 26.1 服务端需要 Java 25） |
+| 产物 | `PluEssentials-3.1.0.jar`（约 5.7 MB，内含 MySQL 驱动与前端资源） |
 | 外部依赖 | **无**（经济、权限组、Web 后台、充值、NPC 全部内置；Citizens 可选） |
 
 ---
@@ -108,13 +110,13 @@ PluEssentials 把开服常用的功能收进**单个 jar**：玩家基础指令�
 
 ### 1. 环境要求
 
-- 服务端 **Java 21**
-- Minecraft **1.21.2**（Bukkit / Spigot / Paper）
+- 服务端 **Java 21+**（MC 26.1 服务端需要 **Java 25**；1.21.x 用 Java 21 即可）
+- Minecraft **26.1.x**（Bukkit / Spigot / Paper），兼容 **1.21.3+**；1.21.2 及更早请用 3.0.0
 
 ### 2. 安装
 
 ```text
-1. 下载 PluEssentials-3.0.0.jar
+1. 下载 PluEssentials-3.1.0.jar
 2. 放入服务端 plugins/ 目录
 3. 启动服务端，自动生成 plugins/PluEssentials/ 配置与数据文件
 4. 完成 —— 经济、权限组、Web 后台开箱即用，无需安装任何前置插件
@@ -1347,7 +1349,7 @@ Authorization: Bearer <token>
 
 ### 环境
 
-- JDK 21
+- JDK 25（编译 MC 26.1 API 必须使用；字节码目标仍是 Java 21）
 - Maven 3.9+
 - Node.js 20+（仅前端构建需要）
 
@@ -1368,10 +1370,11 @@ cd ..
 mvn clean package
 ```
 
-产物：`target/PluEssentials-3.0.0.jar`
+产物：`target/PluEssentials-3.1.0.jar`
 
 > 后端编译启用了 `-Xlint:all,-classfile`，构建输出 0 警告。
-> MySQL 驱动与 Vue 资源由 `maven-shade-plugin` 打入 jar，最终约 5.4 MB。
+> MySQL 驱动与 Vue 资源由 `maven-shade-plugin` 打入 jar，最终约 5.7 MB。
+> 编译 MC 26.1 API 需要 JDK 25（`spigot-api:26.1.2-R0.1-SNAPSHOT`），字节码目标仍为 Java 21。
 
 ## 项目结构
 
@@ -1519,7 +1522,28 @@ JSAPI 支付只能在微信内打开。确认 `public-base-url` 是可公网访�
 两种后端不自动迁移，切换前请先备份 YAML 并手动导入。
 </details>
 
+<details>
+<summary><b>在 1.21.2 或更早的服务端加载失败（<code>NoSuchFieldError: MAX_HEALTH</code>）</b></summary>
+
+3.1.0 编译于 MC 26.1 API，并使用了 1.21.3 才加入的 `Attribute.MAX_HEALTH`，因此最低支持 **1.21.3**。1.21.2 及更早版本请使用 3.0.0 的 jar（可在 Releases 中下载）。
+</details>
+
+<details>
+<summary><b>26.1 服务端启动直接退出 / 报 Java 版本不支持</b></summary>
+
+Minecraft 26.1 服务端要求 **Java 25**（`class file version 69`）。用 Java 21 启动会直接失败，换成 JDK 25 即可；插件本身的字节码目标是 Java 21，无需为插件单独换 JDK。
+</details>
+
 ---
+
+## 版本历史
+
+| 版本 | 主要变化 |
+|------|----------|
+| **3.1.0** | 支持 Minecraft **26.1**：编译依赖升级为 `spigot-api 26.1.2`，适配 `Attribute.MAX_HEALTH`，在 Paper 26.1.2 与 Paper 1.21.3 实测通过 |
+| 3.0.0 | 微信支付 APIv3 JSAPI 充值、中文昵称与中文 ID 兼容、自定义菜单、NPC（内置 + Citizens）、命令告示牌；Web 后台新增 5 个管理页；README 补全全部命令与权限节点 |
+| 2.1.0 | 移除 Vault / 经济插件 / LuckPerms 依赖，改为内置经济与内置权限组；新增 `/group` 与 Web 权限组管理页 |
+| 2.0.0 | 首个公开发布（MIT 许可） |
 
 ## 作者
 
@@ -1540,5 +1564,5 @@ JSAPI 支付只能在微信内打开。确认 `public-base-url` 是可公网访�
 ---
 
 <div align="center">
-<sub>Built with Java 21 · Bukkit API 1.21 · Vue 3</sub>
+<sub>Built with Java 21 · Bukkit API 26.1 · Vue 3</sub>
 </div>
